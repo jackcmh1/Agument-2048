@@ -60,7 +60,12 @@ function App() {
         if (result.changed) {
           busy.current = true;
           setMerged([]);
-          setMotion(result.trajectories);
+          setMotion(
+            result.trajectories.filter(
+              (tile) =>
+                tile.from !== tile.to || result.merged.includes(tile.to),
+            ),
+          );
           motionTimer.current = setTimeout(() => {
             setMotion([]);
             setMerged(result.merged);
@@ -250,7 +255,7 @@ function App() {
                 key={i}
                 data-index={i}
                 aria-label={`${Math.floor(i / 4) + 1}행 ${(i % 4) + 1}열 ${v || "빈칸"}`}
-                className={`tile v${v} ${merged.includes(i) ? "merged" : ""} ${s.choices.includes(i) ? "candidate" : ""} ${s.target === "B01" && [2, 4].includes(v) ? "candidate" : ""} ${s.target === "B02" && i < 12 ? "row-target" : ""}`}
+                className={`tile v${v} ${motion.some((tile) => tile.to === i) ? "motion-hidden" : ""} ${merged.includes(i) ? "merged" : ""} ${s.choices.includes(i) ? "candidate" : ""} ${s.target === "B01" && [2, 4].includes(v) ? "candidate" : ""} ${s.target === "B02" && i < 12 ? "row-target" : ""}`}
                 onClick={(e) => {
                   if (e.detail === 0)
                     dispatch(
@@ -274,6 +279,67 @@ function App() {
               </div>
             ))}
           </div>
+          <section className="augment-toolbar" aria-label="보유 증강 및 능력">
+            <div className="section-title">
+              <h2>
+                보유 증강 <span>{s.owned.length}</span>
+              </h2>
+              <button
+                className="text-button"
+                onClick={() =>
+                  document
+                    .getElementById("augment-list")
+                    ?.scrollIntoView({
+                      behavior: window.matchMedia(
+                        "(prefers-reduced-motion: reduce)",
+                      ).matches
+                        ? "instant"
+                        : "smooth",
+                      block: "start",
+                    })
+                }
+              >
+                전체 효과 보기 ↓
+              </button>
+            </div>
+            {!s.owned.length && (
+              <p className="muted">32 달성 시 첫 증강을 선택합니다.</p>
+            )}
+            <div className="augment-shortcuts">
+              {s.owned.map((id) =>
+                ["B01", "B02"].includes(id) ? (
+                  <button
+                    key={id}
+                    disabled={
+                      !!s.cool[id] ||
+                      s.phase !== "play" ||
+                      !!s.target ||
+                      !!motion.length
+                    }
+                    onClick={() =>
+                      dispatch({ type: "ability", id: id as "B01" | "B02" })
+                    }
+                  >
+                    <strong>{cards[id].name}</strong>
+                    <small>
+                      {s.cool[id]
+                        ? `${s.cool[id]} 이동 후 충전`
+                        : "사용하기 ↗"}
+                    </small>
+                  </button>
+                ) : (
+                  <span
+                    key={id}
+                    className="passive-chip"
+                    title={cards[id].description}
+                  >
+                    {cards[id].name}
+                    <small>패시브</small>
+                  </span>
+                ),
+              )}
+            </div>
+          </section>
           <div className="instruction" role="status">
             {s.phase === "spawn"
               ? "빛나는 빈칸 중 생성 위치를 선택하세요."
@@ -310,7 +376,7 @@ function App() {
             </p>
           </details>
         </section>
-        <aside>
+        <aside id="augment-list" tabIndex={-1}>
           <div className="section-title">
             <h2>나의 증강</h2>
             <span>{s.owned.length} / 6</span>
@@ -336,9 +402,13 @@ function App() {
               {["B01", "B02"].includes(id) ? (
                 <button
                   disabled={!!s.cool[id] || s.phase !== "play" || !!s.target}
-                  onClick={() =>
-                    dispatch({ type: "ability", id: id as "B01" | "B02" })
-                  }
+                  onClick={() => {
+                    dispatch({ type: "ability", id: id as "B01" | "B02" });
+                    boardRef.current?.scrollIntoView({
+                      block: "center",
+                      behavior: "instant",
+                    });
+                  }}
                 >
                   {s.cool[id] ? `${s.cool[id]} 이동 후 충전` : "능력 사용 ↗"}
                 </button>

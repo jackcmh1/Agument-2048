@@ -202,9 +202,7 @@ small {
   border-radius: 8px;
   background: var(--empty-cell);
   color: #ebe5da;
-  transition:
-    background 0.12s,
-    box-shadow 0.12s;
+  transition: box-shadow 0.12s;
 }
 .v2 {
   background: #eee7dc;
@@ -567,10 +565,11 @@ footer {
   z-index: 2;
   font-weight: 700;
 }
-.is-moving > button:not(.v0) {
+.board > button.motion-hidden {
   color: transparent;
   background: var(--empty-cell);
   box-shadow: none;
+  transition: none;
 }
 .merged:not(.v0) {
   animation: merge-pop 180ms ease-out;
@@ -605,4 +604,54 @@ button:not(.tile):not(.secondary):not(.draft-card):not(.text-button) {
     animation: none !important;
     transition: none !important;
   }
+}
+
+.augment-toolbar {
+  margin-top: 14px;
+  padding: 12px;
+  border: 1px solid var(--card-border);
+  border-radius: 10px;
+  background: var(--surface);
+}
+.augment-toolbar h2 {
+  font-size: 13px;
+}
+.augment-toolbar h2 span {
+  margin-left: 6px;
+}
+.augment-toolbar .muted {
+  font-size: 11px;
+  margin: 10px 0 0;
+}
+.augment-shortcuts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.augment-shortcuts:empty {
+  margin: 0;
+}
+.augment-shortcuts > button,
+.passive-chip {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 9px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+}
+.augment-shortcuts > button small {
+  color: #465728;
+  font-size: 10px;
+}
+.passive-chip {
+  border: 1px solid var(--card-border);
+  color: var(--text);
+}
+.passive-chip small {
+  font-size: 10px;
+}
+#augment-list {
+  scroll-margin-top: 16px;
 }

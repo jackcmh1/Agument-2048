@@ -265,7 +265,7 @@ export function applyAction(state: State, action: Action): State {
     s.owned.includes(action.id) &&
     !s.cool[action.id]
   ) {
-    s.target = action.id;
+    s.target = s.target === action.id ? null : action.id;
     return s;
   }
   if (action.type === "target" && s.target) {

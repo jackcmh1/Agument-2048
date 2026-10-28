@@ -220,3 +220,20 @@ describe("animation trajectories", () => {
     );
   });
 });
+
+describe("active ability cancellation", () => {
+  it.each(["B01", "B02"] as const)(
+    "%s toggles off without consuming charge or a turn",
+    (id) => {
+      const state = setup([2, 4, 8], [id]);
+      const selected = applyAction(state, { type: "ability", id });
+      expect(selected.target).toBe(id);
+      const cancelled = applyAction(selected, { type: "ability", id });
+      expect(cancelled).toEqual(state);
+      expect(applyAction(cancelled, { type: "target", index: 0 })).toEqual(
+        state,
+      );
+      expect(applyAction(cancelled, { type: "ability", id }).target).toBe(id);
+    },
+  );
+});

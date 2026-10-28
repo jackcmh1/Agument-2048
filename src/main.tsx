@@ -287,16 +287,14 @@ function App() {
               <button
                 className="text-button"
                 onClick={() =>
-                  document
-                    .getElementById("augment-list")
-                    ?.scrollIntoView({
-                      behavior: window.matchMedia(
-                        "(prefers-reduced-motion: reduce)",
-                      ).matches
-                        ? "instant"
-                        : "smooth",
-                      block: "start",
-                    })
+                  document.getElementById("augment-list")?.scrollIntoView({
+                    behavior: window.matchMedia(
+                      "(prefers-reduced-motion: reduce)",
+                    ).matches
+                      ? "instant"
+                      : "smooth",
+                    block: "start",
+                  })
                 }
               >
                 전체 효과 보기 ↓
@@ -313,18 +311,21 @@ function App() {
                     disabled={
                       !!s.cool[id] ||
                       s.phase !== "play" ||
-                      !!s.target ||
+                      (!!s.target && s.target !== id) ||
                       !!motion.length
                     }
+                    aria-pressed={s.target === id}
                     onClick={() =>
                       dispatch({ type: "ability", id: id as "B01" | "B02" })
                     }
                   >
                     <strong>{cards[id].name}</strong>
                     <small>
-                      {s.cool[id]
-                        ? `${s.cool[id]} 이동 후 충전`
-                        : "사용하기 ↗"}
+                      {s.target === id
+                        ? "사용 취소"
+                        : s.cool[id]
+                          ? `${s.cool[id]} 이동 후 충전`
+                          : "사용하기 ↗"}
                     </small>
                   </button>
                 ) : (
@@ -401,7 +402,12 @@ function App() {
               <p>{cards[id].description}</p>
               {["B01", "B02"].includes(id) ? (
                 <button
-                  disabled={!!s.cool[id] || s.phase !== "play" || !!s.target}
+                  disabled={
+                    !!s.cool[id] ||
+                    s.phase !== "play" ||
+                    (!!s.target && s.target !== id)
+                  }
+                  aria-pressed={s.target === id}
                   onClick={() => {
                     dispatch({ type: "ability", id: id as "B01" | "B02" });
                     boardRef.current?.scrollIntoView({
@@ -410,7 +416,11 @@ function App() {
                     });
                   }}
                 >
-                  {s.cool[id] ? `${s.cool[id]} 이동 후 충전` : "능력 사용 ↗"}
+                  {s.target === id
+                    ? "사용 취소"
+                    : s.cool[id]
+                      ? `${s.cool[id]} 이동 후 충전`
+                      : "능력 사용 ↗"}
                 </button>
               ) : (
                 s.cool[id] > 0 && (

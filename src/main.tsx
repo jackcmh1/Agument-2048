@@ -40,7 +40,7 @@ function App() {
   );
   const [motionPreference, setMotionPreference] = useState(() => {
     const saved = localStorage.getItem("augmented2048-motion");
-    return saved === "on" || saved === "off" ? saved : "auto";
+    return saved === "on" || saved === "off" || saved === "auto" ? saved : "on";
   });
   const [systemReducedMotion, setSystemReducedMotion] = useState(
     () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,

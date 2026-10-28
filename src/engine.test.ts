@@ -237,3 +237,40 @@ describe("active ability cancellation", () => {
     },
   );
 });
+
+describe("continue after victory", () => {
+  it("preserves the run and does not show victory again at 4096", () => {
+    const won = move(setup([1024, 1024], ["G01", "B01"]));
+    expect(won.phase).toBe("won");
+    const continued = applyAction(won, { type: "continue" });
+    expect(continued.phase).toBe("play");
+    expect(continued.continued).toBe(true);
+    for (const key of [
+      "board",
+      "score",
+      "turn",
+      "spawned",
+      "owned",
+      "cool",
+      "seed",
+      "next",
+      "stats",
+    ] as const)
+      expect(continued[key]).toEqual(won[key]);
+    continued.board = setup([2048, 2048]).board;
+    const next = move(continued);
+    expect(next.board).toContain(4096);
+    expect(next.phase).toBe("play");
+    expect(next.score).toBe(won.score + 4096);
+  });
+  it("ignores continuation outside victory and resets on a fresh run", () => {
+    const state = setup([2]);
+    expect(applyAction(state, { type: "continue" })).toBe(state);
+    expect(createGame(123).continued).toBe(false);
+  });
+  it("still detects loss in an endless run", () => {
+    const state = setup([4096, 4, 2, 4, 4, 2, 4, 2, 2, 4, 2, 4, 4, 2, 4, 2]);
+    state.phase = "won";
+    expect(applyAction(state, { type: "continue" }).phase).toBe("lost");
+  });
+});

@@ -23,7 +23,8 @@ const KEY = "augmented2048-v1";
 function load(): State {
   try {
     const v = JSON.parse(localStorage.getItem(KEY) || "null");
-    if (v?.version === 1 && v.state?.board?.length === 16) return v.state;
+    if (v?.version === 1 && v.state?.board?.length === 16)
+      return { continued: false, ...v.state };
   } catch {}
   return createGame();
 }
@@ -255,7 +256,7 @@ function App() {
                 key={i}
                 data-index={i}
                 aria-label={`${Math.floor(i / 4) + 1}행 ${(i % 4) + 1}열 ${v || "빈칸"}`}
-                className={`tile v${v} ${motion.some((tile) => tile.to === i) ? "motion-hidden" : ""} ${merged.includes(i) ? "merged" : ""} ${s.choices.includes(i) ? "candidate" : ""} ${s.target === "B01" && [2, 4].includes(v) ? "candidate" : ""} ${s.target === "B02" && i < 12 ? "row-target" : ""}`}
+                className={`tile v${v} ${v >= 4096 ? "high-value" : ""} ${motion.some((tile) => tile.to === i) ? "motion-hidden" : ""} ${merged.includes(i) ? "merged" : ""} ${s.choices.includes(i) ? "candidate" : ""} ${s.target === "B01" && [2, 4].includes(v) ? "candidate" : ""} ${s.target === "B02" && i < 12 ? "row-target" : ""}`}
                 onClick={(e) => {
                   if (e.detail === 0)
                     dispatch(
@@ -273,7 +274,7 @@ function App() {
                 aria-hidden="true"
                 data-flight={i}
                 key={i}
-                className={`tile flying v${tile.value}`}
+                className={`tile flying v${tile.value} ${tile.value >= 4096 ? "high-value" : ""}`}
               >
                 {tile.value}
               </div>
@@ -502,7 +503,15 @@ function App() {
             <p>
               점수 {s.score.toLocaleString()} · 최고 타일 {max} · {s.turn} 이동
             </p>
-            <button onClick={() => dispatch({ type: "reset" })}>
+            {s.phase === "won" && (
+              <button onClick={() => dispatch({ type: "continue" })}>
+                이어서 하기
+              </button>
+            )}
+            <button
+              className="secondary"
+              onClick={() => dispatch({ type: "reset" })}
+            >
               새로운 런 시작
             </button>
             <button className="secondary" onClick={download}>

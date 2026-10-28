@@ -50,6 +50,7 @@ export const cards: Record<
   },
 };
 export type State = {
+  continued: boolean;
   board: number[];
   score: number;
   turn: number;
@@ -75,7 +76,8 @@ export type Action =
   | { type: "spawn"; index: number }
   | { type: "ability"; id: "B01" | "B02" }
   | { type: "target"; index: number }
-  | { type: "cancel" };
+  | { type: "cancel" }
+  | { type: "continue" };
 function random(s: State) {
   s.seed = (Math.imul(s.seed, 1664525) + 1013904223) >>> 0;
   return s.seed / 4294967296;
@@ -169,7 +171,7 @@ export function recoverable(s: State) {
   );
 }
 function finish(s: State) {
-  if (s.board.some((v) => v >= 2048)) {
+  if (!s.continued && s.board.some((v) => v >= 2048)) {
     s.phase = "won";
     return;
   }
@@ -206,6 +208,7 @@ function spawn(s: State, index: number) {
 }
 export function createGame(seed = Date.now() >>> 0): State {
   const s: State = {
+    continued: false,
     board: Array(16).fill(0),
     score: 0,
     turn: 0,
@@ -234,6 +237,13 @@ export function createGame(seed = Date.now() >>> 0): State {
 }
 export function applyAction(state: State, action: Action): State {
   const s: State = structuredClone(state);
+  if (action.type === "continue") {
+    if (s.phase !== "won") return state;
+    s.continued = true;
+    note(s, "계속 도전 — 4096 이상의 타일을 향해!");
+    finish(s);
+    return s;
+  }
   if (action.type === "cancel") {
     s.target = null;
     return s;

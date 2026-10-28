@@ -655,3 +655,9 @@ button:not(.tile):not(.secondary):not(.draft-card):not(.text-button) {
 #augment-list {
   scroll-margin-top: 16px;
 }
+
+.tile.high-value {
+  background: #536b35;
+  color: #fff4cf;
+  font-size: clamp(17px, 5vw, 27px);
+}

@@ -96,7 +96,8 @@ export function nextValue(s: State) {
 }
 export function movement(board: number[], direction: Direction) {
   const out = [...board],
-    merged: number[] = [];
+    merged: number[] = [],
+    trajectories: { from: number; to: number; value: number }[] = [];
   let score = 0,
     small = 0;
   for (let line = 0; line < 4; line++) {
@@ -109,22 +110,39 @@ export function movement(board: number[], direction: Direction) {
             ? i * 4 + line
             : (3 - i) * 4 + line,
     );
-    const values = indices.map((i) => board[i]).filter(Boolean),
+    const sources = indices.filter((i) => board[i] !== 0);
+    const values = sources.map((i) => board[i]),
       result: number[] = [];
     for (let j = 0; j < values.length; j++) {
       if (values[j] === values[j + 1]) {
+        trajectories.push(
+          { from: sources[j], to: indices[result.length], value: values[j] },
+          {
+            from: sources[j + 1],
+            to: indices[result.length],
+            value: values[j + 1],
+          },
+        );
         const v = values[j] * 2;
         merged.push(indices[result.length]);
         result.push(v);
         score += v;
         if (v === 4) small++;
         j++;
-      } else result.push(values[j]);
+      } else {
+        trajectories.push({
+          from: sources[j],
+          to: indices[result.length],
+          value: values[j],
+        });
+        result.push(values[j]);
+      }
     }
     indices.forEach((idx, i) => (out[idx] = result[i] || 0));
   }
   return {
     board: out,
+    trajectories,
     merged,
     score,
     small,

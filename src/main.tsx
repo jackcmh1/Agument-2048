@@ -1,4 +1,11 @@
-import React, { useEffect, useReducer, useRef } from "react";
+import React, {
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+  useCallback,
+  useLayoutEffect,
+} from "react";
 import { createRoot } from "react-dom/client";
 import {
   applyAction,
@@ -6,6 +13,7 @@ import {
   cards,
   goals,
   nextValue,
+  movement,
   type Action,
   type Direction,
   type State,
@@ -20,12 +28,87 @@ function load(): State {
   return createGame();
 }
 function App() {
-  const [s, dispatch] = useReducer(
+  const [s, rawDispatch] = useReducer(
     (s: State, a: Action | { type: "reset"; seed?: number }) =>
       a.type === "reset" ? createGame(a.seed) : applyAction(s, a),
     undefined,
     load,
   );
+  const [theme, setTheme] = useState(() =>
+    localStorage.getItem("augmented2048-theme") === "dark" ? "dark" : "light",
+  );
+  const [motion, setMotion] = useState<
+    { from: number; to: number; value: number }[]
+  >([]);
+  const [merged, setMerged] = useState<number[]>([]);
+  const boardRef = useRef<HTMLDivElement>(null);
+  const stateRef = useRef(s);
+  const busy = useRef(false);
+  const motionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  stateRef.current = s;
+  const dispatch = useCallback(
+    (action: Action | { type: "reset"; seed?: number }) => {
+      if (busy.current) return;
+      const current = stateRef.current;
+      if (
+        action.type === "move" &&
+        current.phase === "play" &&
+        !current.target &&
+        !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ) {
+        const result = movement(current.board, action.direction);
+        if (result.changed) {
+          busy.current = true;
+          setMerged([]);
+          setMotion(result.trajectories);
+          motionTimer.current = setTimeout(() => {
+            setMotion([]);
+            setMerged(result.merged);
+            busy.current = false;
+          }, 150);
+        }
+      } else setMerged([]);
+      rawDispatch(action);
+    },
+    [],
+  );
+  useEffect(
+    () => () => {
+      if (motionTimer.current) clearTimeout(motionTimer.current);
+    },
+    [],
+  );
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("augmented2048-theme", theme);
+  }, [theme]);
+  useLayoutEffect(() => {
+    const board = boardRef.current;
+    if (!board || !motion.length) return;
+    const rect = board.getBoundingClientRect();
+    const cells = board.querySelectorAll<HTMLElement>("[data-index]");
+    const animations = motion.map((tile, i) => {
+      const el = board.querySelector<HTMLElement>(`[data-flight="${i}"]`)!;
+      const from = cells[tile.from].getBoundingClientRect();
+      const to = cells[tile.to].getBoundingClientRect();
+      Object.assign(el.style, {
+        left: `${from.left - rect.left - board.clientLeft}px`,
+        top: `${from.top - rect.top - board.clientTop}px`,
+        width: `${from.width}px`,
+        height: `${from.height}px`,
+      });
+      return el.animate(
+        [
+          { transform: "translate(0,0)" },
+          {
+            transform: `translate(${to.left - from.left}px,${to.top - from.top}px)`,
+          },
+        ],
+        { duration: 140, easing: "ease-in-out", fill: "forwards" },
+      );
+    });
+    return () => animations.forEach((a) => a.cancel());
+  }, [motion]);
   const touch = useRef<{ x: number; y: number } | null>(null);
   useEffect(() => {
     localStorage.setItem(KEY, JSON.stringify({ version: 1, state: s }));
@@ -80,9 +163,21 @@ function App() {
           </h1>
           <p>익숙한 퍼즐, 매번 다른 가능성.</p>
         </div>
-        <button className="secondary" onClick={reset}>
-          새 게임 ↗
-        </button>
+        <div className="header-actions">
+          <button
+            className="secondary theme-toggle"
+            aria-label={
+              theme === "light" ? "다크 모드로 전환" : "일반 모드로 전환"
+            }
+            aria-pressed={theme === "dark"}
+            onClick={() => setTheme(theme === "light" ? "dark" : "light")}
+          >
+            {theme === "light" ? "☾ 다크 모드" : "☀ 일반 모드"}
+          </button>
+          <button className="secondary" onClick={reset}>
+            새 게임 ↗
+          </button>
+        </div>
       </header>
       <div className="layout">
         <section className="play-area">
@@ -109,7 +204,8 @@ function App() {
             </span>
           </div>
           <div
-            className="board"
+            ref={boardRef}
+            className={`board ${motion.length ? "is-moving" : ""}`}
             aria-label="2048 게임 보드"
             onPointerDown={(e) => {
               touch.current = { x: e.clientX, y: e.clientY };
@@ -154,7 +250,7 @@ function App() {
                 key={i}
                 data-index={i}
                 aria-label={`${Math.floor(i / 4) + 1}행 ${(i % 4) + 1}열 ${v || "빈칸"}`}
-                className={`tile v${v} ${s.choices.includes(i) ? "candidate" : ""} ${s.target === "B01" && [2, 4].includes(v) ? "candidate" : ""} ${s.target === "B02" && i < 12 ? "row-target" : ""}`}
+                className={`tile v${v} ${merged.includes(i) ? "merged" : ""} ${s.choices.includes(i) ? "candidate" : ""} ${s.target === "B01" && [2, 4].includes(v) ? "candidate" : ""} ${s.target === "B02" && i < 12 ? "row-target" : ""}`}
                 onClick={(e) => {
                   if (e.detail === 0)
                     dispatch(
@@ -166,6 +262,16 @@ function App() {
               >
                 {v || (s.choices.includes(i) ? `+${nextValue(s)}` : "")}
               </button>
+            ))}
+            {motion.map((tile, i) => (
+              <div
+                aria-hidden="true"
+                data-flight={i}
+                key={i}
+                className={`tile flying v${tile.value}`}
+              >
+                {tile.value}
+              </div>
             ))}
           </div>
           <div className="instruction" role="status">
@@ -267,7 +373,7 @@ function App() {
       <footer>
         AUGMENTED 2048 <span>하나의 선택이 다음 수를 바꿉니다.</span>
       </footer>
-      {s.phase === "draft" && (
+      {s.phase === "draft" && !motion.length && (
         <div className="overlay">
           <section
             role="dialog"
@@ -297,7 +403,7 @@ function App() {
           </section>
         </div>
       )}
-      {(s.phase === "won" || s.phase === "lost") && (
+      {(s.phase === "won" || s.phase === "lost") && !motion.length && (
         <div className="overlay">
           <section
             className="modal result"

@@ -196,3 +196,27 @@ describe("augments", () => {
     }
   });
 });
+
+describe("animation trajectories", () => {
+  it("tracks both source tiles into each merge without chaining", () => {
+    const result = movement(setup([2, 2, 2, 2]).board, "left");
+    expect(result.trajectories).toEqual([
+      { from: 0, to: 0, value: 2 },
+      { from: 1, to: 0, value: 2 },
+      { from: 2, to: 1, value: 2 },
+      { from: 3, to: 1, value: 2 },
+    ]);
+  });
+  it("tracks vertical and reverse slides to their real destination", () => {
+    expect(movement(setup([2, 0, 4]).board, "right").trajectories).toEqual([
+      { from: 2, to: 3, value: 4 },
+      { from: 0, to: 2, value: 2 },
+    ]);
+    expect(movement(setup([2, 0, 0, 0, 2]).board, "down").trajectories).toEqual(
+      [
+        { from: 4, to: 12, value: 2 },
+        { from: 0, to: 12, value: 2 },
+      ],
+    );
+  });
+});

@@ -689,3 +689,62 @@ button:not(.tile):not(.secondary):not(.draft-card):not(.text-button) {
 .motion-settings small {
   font-size: 10px;
 }
+
+/* Card definitions supply rarity; every presentation shares this palette. */
+:root {
+  --rarity-uncommon: #216d98;
+  --rarity-uncommon-border: #77c4ec;
+  --rarity-rare: #87640b;
+  --rarity-rare-border: #dab637;
+}
+:root[data-theme="dark"] {
+  --rarity-uncommon: #91d8ff;
+  --rarity-uncommon-border: #65b9e6;
+  --rarity-rare: #ffe07d;
+  --rarity-rare-border: #d9b846;
+}
+[data-rarity="uncommon"] {
+  --rarity-color: var(--rarity-uncommon);
+  --rarity-border: var(--rarity-uncommon-border);
+  --rarity-fill: #cfedff;
+}
+[data-rarity="rare"] {
+  --rarity-color: var(--rarity-rare);
+  --rarity-border: var(--rarity-rare-border);
+  --rarity-fill: #ffeb9b;
+}
+[data-rarity="uncommon"],
+[data-rarity="rare"] {
+  border: 1px solid var(--rarity-border);
+}
+[data-rarity="uncommon"] .card-label,
+[data-rarity="rare"] .card-label,
+[data-rarity="uncommon"] .rarity-label,
+[data-rarity="rare"] .rarity-label,
+[data-rarity="uncommon"].passive-chip,
+[data-rarity="rare"].passive-chip,
+[data-rarity="uncommon"].draft-card strong,
+[data-rarity="rare"].draft-card strong {
+  color: var(--rarity-color);
+}
+[data-rarity="uncommon"].draft-card:hover,
+[data-rarity="rare"].draft-card:hover {
+  border-color: var(--rarity-border);
+  background: color-mix(in srgb, var(--rarity-fill) 15%, var(--draft));
+}
+.augment-shortcuts > button[data-rarity="uncommon"],
+.augment-shortcuts > button[data-rarity="rare"],
+.owned[data-rarity="uncommon"] button,
+.owned[data-rarity="rare"] button {
+  background: var(--rarity-fill) !important;
+  color: #29303a;
+}
+.augment-shortcuts > button[data-rarity="uncommon"] .rarity-label {
+  color: #216d98;
+}
+.augment-shortcuts > button[data-rarity="rare"] .rarity-label {
+  color: #87640b;
+}
+.rarity-label {
+  font-size: 10px;
+}

@@ -1,50 +1,56 @@
 export type Id = "G01" | "G02" | "G03" | "M01" | "M02" | "B01" | "B02" | "R03";
+export const rarities = {
+  common: { label: "일반" },
+  uncommon: { label: "고급" },
+  rare: { label: "희귀" },
+} as const;
+export type Rarity = keyof typeof rarities;
 export type Direction = "left" | "right" | "up" | "down";
 export const goals = [32, 64, 128, 256, 512, 1024];
 export const cards: Record<
   Id,
-  { name: string; rare: boolean; description: string }
+  { name: string; rarity: Rarity; description: string }
 > = {
   G01: {
     name: "생성 예고",
-    rare: false,
+    rarity: "common",
     description: "다음에 생성될 숫자를 미리 확인합니다.",
   },
   G02: {
     name: "선택받은 탄생",
-    rare: true,
+    rarity: "rare",
     description: "매 5번째 생성은 빈칸 후보 두 곳 중 위치를 선택합니다.",
   },
   G03: {
     name: "고급 생산 라인",
-    rare: false,
+    rarity: "common",
     description: "매 5번째 생성 숫자가 반드시 4가 됩니다.",
   },
   M01: {
     name: "연쇄 반응",
-    rare: true,
+    rarity: "rare",
     description:
       "한 이동에서 2쌍 이상 합성하면 생성을 취소합니다. 이후 4이동 대기.",
   },
   M02: {
     name: "정리의 달인",
-    rare: false,
+    rarity: "common",
     description:
       "2+2 합성 3회마다 작은 타일을 제거합니다. 방금 합성된 타일은 보호됩니다.",
   },
   B01: {
     name: "긴급 정리",
-    rare: false,
+    rarity: "common",
     description: "2 또는 4 타일 하나를 터치해 제거합니다. 사용 후 15이동 충전.",
   },
   B02: {
     name: "차원 교환",
-    rare: true,
+    rarity: "rare",
     description: "인접한 두 행을 교환합니다. 사용 후 12이동 충전.",
   },
   R03: {
     name: "벼랑 끝의 보상",
-    rare: true,
+    rarity: "rare",
     description:
       "빈칸 2개 이하에서 합성하면 생성을 취소합니다. 이후 8이동 대기.",
   },

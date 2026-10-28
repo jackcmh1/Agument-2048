@@ -11,6 +11,7 @@ import {
   applyAction,
   createGame,
   cards,
+  rarities,
   goals,
   nextValue,
   movement,
@@ -331,6 +332,7 @@ function App() {
                 ["B01", "B02"].includes(id) ? (
                   <button
                     key={id}
+                    data-rarity={cards[id].rarity}
                     disabled={
                       !!s.cool[id] ||
                       s.phase !== "play" ||
@@ -343,6 +345,9 @@ function App() {
                     }
                   >
                     <strong>{cards[id].name}</strong>
+                    <span className="rarity-label">
+                      {rarities[cards[id].rarity].label} · 사용형
+                    </span>
                     <small>
                       {s.target === id
                         ? "사용 취소"
@@ -355,10 +360,13 @@ function App() {
                   <span
                     key={id}
                     className="passive-chip"
+                    data-rarity={cards[id].rarity}
                     title={cards[id].description}
                   >
                     {cards[id].name}
-                    <small>패시브</small>
+                    <small className="rarity-label">
+                      {rarities[cards[id].rarity].label} · 패시브
+                    </small>
                   </span>
                 ),
               )}
@@ -436,9 +444,9 @@ function App() {
             </div>
           )}
           {s.owned.map((id) => (
-            <article className="owned" key={id}>
+            <article className="owned" key={id} data-rarity={cards[id].rarity}>
               <div className="card-label">
-                {id} · {cards[id].rare ? "희귀" : "일반"}
+                {id} · {rarities[cards[id].rarity].label}
               </div>
               <h3>{cards[id].name}</h3>
               <p>{cards[id].description}</p>
@@ -510,11 +518,12 @@ function App() {
               {s.draft.map((id) => (
                 <button
                   className="draft-card"
+                  data-rarity={cards[id].rarity}
                   key={id}
                   onClick={() => dispatch({ type: "pick", id })}
                 >
                   <span className="card-label">
-                    {id} · {cards[id].rare ? "희귀" : "일반"}
+                    {id} · {rarities[cards[id].rarity].label}
                   </span>
                   <h3>{cards[id].name}</h3>
                   <p>{cards[id].description}</p>

@@ -38,6 +38,28 @@ function App() {
   const [theme, setTheme] = useState(() =>
     localStorage.getItem("augmented2048-theme") === "dark" ? "dark" : "light",
   );
+  const [motionPreference, setMotionPreference] = useState(() => {
+    const saved = localStorage.getItem("augmented2048-motion");
+    return saved === "on" || saved === "off" ? saved : "auto";
+  });
+  const [systemReducedMotion, setSystemReducedMotion] = useState(
+    () => window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+  );
+  const motionEnabled =
+    motionPreference === "on" ||
+    (motionPreference === "auto" && !systemReducedMotion);
+  const motionEnabledRef = useRef(motionEnabled);
+  motionEnabledRef.current = motionEnabled;
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const update = () => setSystemReducedMotion(media.matches);
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+  useEffect(() => {
+    document.documentElement.dataset.motion = motionEnabled ? "on" : "off";
+    localStorage.setItem("augmented2048-motion", motionPreference);
+  }, [motionEnabled, motionPreference]);
   const [motion, setMotion] = useState<
     { from: number; to: number; value: number }[]
   >([]);
@@ -55,7 +77,7 @@ function App() {
         action.type === "move" &&
         current.phase === "play" &&
         !current.target &&
-        !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        motionEnabledRef.current
       ) {
         const result = movement(current.board, action.direction);
         if (result.changed) {
@@ -353,6 +375,25 @@ function App() {
             {s.target && (
               <button onClick={() => dispatch({ type: "cancel" })}>취소</button>
             )}
+          </div>
+          <div className="motion-settings">
+            <label htmlFor="motion-preference">애니메이션</label>
+            <select
+              id="motion-preference"
+              value={motionPreference}
+              onChange={(e) => setMotionPreference(e.target.value)}
+            >
+              <option value="auto">기기 설정 따름</option>
+              <option value="on">켜기</option>
+              <option value="off">끄기</option>
+            </select>
+            <small role="status">
+              {motionEnabled
+                ? "이동·합성 효과 켜짐"
+                : motionPreference === "auto"
+                  ? "기기의 동작 줄이기 설정으로 꺼짐"
+                  : "효과 꺼짐"}
+            </small>
           </div>
           <div className="direction-pad" aria-label="방향 조작">
             {(["left", "up", "down", "right"] as Direction[]).map((d, i) => (

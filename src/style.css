@@ -598,9 +598,9 @@ button:not(.tile):not(.secondary):not(.draft-card):not(.text-button) {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  *,
-  *::before,
-  *::after {
+  :root:not([data-motion="on"]) *,
+  :root:not([data-motion="on"]) *::before,
+  :root:not([data-motion="on"]) *::after {
     animation: none !important;
     transition: none !important;
   }
@@ -660,4 +660,32 @@ button:not(.tile):not(.secondary):not(.draft-card):not(.text-button) {
   background: #536b35;
   color: #fff4cf;
   font-size: clamp(17px, 5vw, 27px);
+}
+
+:root[data-motion="off"] *,
+:root[data-motion="off"] *::before,
+:root[data-motion="off"] *::after {
+  animation: none !important;
+  transition: none !important;
+}
+.motion-settings {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 8px 0 12px;
+  font-size: 11px;
+  color: var(--caption);
+}
+.motion-settings select {
+  font: inherit;
+  border: 1px solid var(--button-border);
+  border-radius: 6px;
+  padding: 6px;
+  background: var(--surface);
+  color: var(--text);
+}
+.motion-settings small {
+  font-size: 10px;
 }

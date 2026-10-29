@@ -748,3 +748,20 @@ button:not(.tile):not(.secondary):not(.draft-card):not(.text-button) {
 .rarity-label {
   font-size: 10px;
 }
+
+:root { --augment-alert: #b52e35; }
+:root[data-theme="dark"] { --augment-alert: #ff9299; }
+.augment-shortcuts > [data-imminent="true"],
+.owned[data-imminent="true"] {
+  border: 2px solid var(--augment-alert);
+}
+.augment-status {
+  display: block;
+  line-height: 1.6;
+  white-space: normal;
+}
+.augment-shortcuts > [data-imminent="true"] .augment-status,
+.owned[data-imminent="true"] .augment-status {
+  color: var(--augment-alert);
+  font-weight: 700;
+}

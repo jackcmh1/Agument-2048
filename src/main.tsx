@@ -20,6 +20,7 @@ import {
   type State,
 } from "./engine";
 import "./style.css";
+import { augmentStatus } from "./augmentStatus";
 const KEY = "augmented2048-v1";
 function load(): State {
   try {
@@ -332,6 +333,7 @@ function App() {
                 ["B01", "B02"].includes(id) ? (
                   <button
                     key={id}
+                    data-imminent={augmentStatus(s, id).imminent || undefined}
                     data-rarity={cards[id].rarity}
                     disabled={
                       !!s.cool[id] ||
@@ -355,11 +357,13 @@ function App() {
                           ? `${s.cool[id]} 이동 후 충전`
                           : "사용하기 ↗"}
                     </small>
+                    <small className="augment-status">{augmentStatus(s, id).text}</small>
                   </button>
                 ) : (
                   <span
                     key={id}
                     className="passive-chip"
+                    data-imminent={augmentStatus(s, id).imminent || undefined}
                     data-rarity={cards[id].rarity}
                     title={cards[id].description}
                   >
@@ -367,6 +371,7 @@ function App() {
                     <small className="rarity-label">
                       {rarities[cards[id].rarity].label} · 패시브
                     </small>
+                    <small className="augment-status">{augmentStatus(s, id).text}</small>
                   </span>
                 ),
               )}
@@ -444,12 +449,14 @@ function App() {
             </div>
           )}
           {s.owned.map((id) => (
-            <article className="owned" key={id} data-rarity={cards[id].rarity}>
+            <article className="owned" key={id} data-rarity={cards[id].rarity}
+              data-imminent={augmentStatus(s, id).imminent || undefined}>
               <div className="card-label">
                 {id} · {rarities[cards[id].rarity].label}
               </div>
               <h3>{cards[id].name}</h3>
               <p>{cards[id].description}</p>
+              <small className="augment-status">{augmentStatus(s, id).text}</small>
               {["B01", "B02"].includes(id) ? (
                 <button
                   disabled={
@@ -472,16 +479,7 @@ function App() {
                       ? `${s.cool[id]} 이동 후 충전`
                       : "능력 사용 ↗"}
                 </button>
-              ) : (
-                s.cool[id] > 0 && (
-                  <small>{s.cool[id]} 이동 후 재발동 가능</small>
-                )
-              )}
-              {id === "M02" && (
-                <small>
-                  합성 {s.small}/3 · 대기 {s.pendingClean}회
-                </small>
-              )}
+              ) : null}
             </article>
           ))}
           <div className="section-title log-title">

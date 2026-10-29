@@ -276,18 +276,6 @@ function App() {
             }}
           >
             {s.board.map((v, i) => (
-              <React.Fragment key={i}>
-              {s.target === "B02" && i > 0 && i % 4 === 0 && (
-                <button
-                  className="row-swap-control"
-                  aria-label={`${i / 4}행과 ${i / 4 + 1}행 교환`}
-                  onPointerDown={(e) => e.stopPropagation()}
-                  onPointerUp={(e) => e.stopPropagation()}
-                  onClick={() => dispatch({ type: "target", index: i - 4 })}
-                >
-                  <span aria-hidden="true">↕</span> {i / 4}·{i / 4 + 1}행 교환
-                </button>
-              )}
               <button
                 key={i}
                 data-index={i}
@@ -304,8 +292,24 @@ function App() {
               >
                 {v || (s.choices.includes(i) ? `+${nextValue(s)}` : "")}
               </button>
-              </React.Fragment>
             ))}
+            {s.target === "B02" && (
+              <div className="row-swap-overlay">
+                {[1, 2, 3].map((row) => (
+                  <button
+                    key={row}
+                    className="row-swap-control"
+                    style={{ gridRow: row }}
+                    aria-label={`${row}행과 ${row + 1}행 교환`}
+                    onPointerDown={(e) => e.stopPropagation()}
+                    onPointerUp={(e) => e.stopPropagation()}
+                    onClick={() => dispatch({ type: "target", index: (row - 1) * 4 })}
+                  >
+                    <span aria-hidden="true">↕</span> {row}·{row + 1}행 교환
+                  </button>
+                ))}
+              </div>
+            )}
             {motion.map((tile, i) => (
               <div
                 aria-hidden="true"

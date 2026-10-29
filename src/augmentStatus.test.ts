@@ -27,12 +27,12 @@ describe("augment status", () => {
     s.board = [2, 2, 4, 4, ...Array(12).fill(0)];
     s.cool = { M01: 1, B01: 1 };
     expect(augmentStatus(s, "M01")).toMatchObject({ imminent: true });
-    expect(augmentStatus(s, "M01").text).toContain("이후 조건 충족 시 발동");
+    expect(augmentStatus(s, "M01").text).toBe("대기 1이동");
     expect(augmentStatus(s, "B01").text).toContain("다음 유효한 이동 후 사용 가능");
     const n = applyAction(s, { type: "move", direction: "left" });
     expect(n.stats.M01).toBeUndefined();
     expect(augmentStatus(n, "M01")).toMatchObject({ imminent: false });
-    expect(augmentStatus(n, "M01").text).toContain("조건부 발동");
+    expect(augmentStatus(n, "M01").text).toBe("대기 0이동");
     expect(augmentStatus(n, "B01").text).toBe("사용 가능");
   });
 

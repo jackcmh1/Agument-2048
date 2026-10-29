@@ -264,7 +264,7 @@ function App() {
                 const el = document
                   .elementFromPoint(e.clientX, e.clientY)
                   ?.closest("[data-index]") as HTMLElement | null;
-                if (el) {
+                if (el && s.target !== "B02") {
                   const i = Number(el.dataset.index);
                   dispatch(
                     s.phase === "spawn"
@@ -276,13 +276,25 @@ function App() {
             }}
           >
             {s.board.map((v, i) => (
+              <React.Fragment key={i}>
+              {s.target === "B02" && i > 0 && i % 4 === 0 && (
+                <button
+                  className="row-swap-control"
+                  aria-label={`${i / 4}행과 ${i / 4 + 1}행 교환`}
+                  onPointerDown={(e) => e.stopPropagation()}
+                  onPointerUp={(e) => e.stopPropagation()}
+                  onClick={() => dispatch({ type: "target", index: i - 4 })}
+                >
+                  <span aria-hidden="true">↕</span> {i / 4}·{i / 4 + 1}행 교환
+                </button>
+              )}
               <button
                 key={i}
                 data-index={i}
                 aria-label={`${Math.floor(i / 4) + 1}행 ${(i % 4) + 1}열 ${v || "빈칸"}`}
-                className={`tile v${v} ${v >= 4096 ? "high-value" : ""} ${motion.some((tile) => tile.to === i) ? "motion-hidden" : ""} ${merged.includes(i) ? "merged" : ""} ${s.choices.includes(i) ? "candidate" : ""} ${s.target === "B01" && [2, 4].includes(v) ? "candidate" : ""} ${s.target === "B02" && i < 12 ? "row-target" : ""}`}
+                className={`tile v${v} ${v >= 4096 ? "high-value" : ""} ${motion.some((tile) => tile.to === i) ? "motion-hidden" : ""} ${merged.includes(i) ? "merged" : ""} ${s.choices.includes(i) ? "candidate" : ""} ${s.target === "B01" && [2, 4].includes(v) ? "candidate" : ""}`}
                 onClick={(e) => {
-                  if (e.detail === 0)
+                  if (e.detail === 0 && s.target !== "B02")
                     dispatch(
                       s.phase === "spawn"
                         ? { type: "spawn", index: i }
@@ -292,6 +304,7 @@ function App() {
               >
                 {v || (s.choices.includes(i) ? `+${nextValue(s)}` : "")}
               </button>
+              </React.Fragment>
             ))}
             {motion.map((tile, i) => (
               <div
@@ -383,7 +396,7 @@ function App() {
               : s.target === "B01"
                 ? "제거할 2 또는 4 타일을 선택하세요."
                 : s.target === "B02"
-                  ? "교환할 두 행 중 위쪽 행을 선택하세요."
+                  ? "교환할 두 행 사이의 ↕ 버튼을 누르세요."
                   : "방향키 / WASD · 모바일에서는 스와이프"}
             {s.target && (
               <button onClick={() => dispatch({ type: "cancel" })}>취소</button>
@@ -427,7 +440,7 @@ function App() {
               않습니다. 진행 상황은 이 브라우저에 자동 저장됩니다.
             </p>
             <p>
-              차원 교환은 선택한 행과 바로 아래 행을 바꿉니다. 충전과 재사용
+              차원 교환은 두 행 사이의 ↕ 버튼을 눌러 위아래 행을 바꿉니다. 충전과 재사용
               대기는 유효한 이동에서만 진행됩니다.
             </p>
           </details>

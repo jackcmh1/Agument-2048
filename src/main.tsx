@@ -22,6 +22,7 @@ import {
   type Direction,
   type State,
   type Id,
+  type Rarity,
 } from "./engine";
 import "./style.css";
 import { AugmentHelp } from "./AugmentHelp";
@@ -40,6 +41,10 @@ function load(): State {
 }
 function App() {
   const codexRef = useRef<HTMLDialogElement>(null);
+  const [codexRarity, setCodexRarity] = useState<Rarity | "all">("all");
+  const codexIds = (Object.keys(cards) as Id[]).filter(
+    (id) => codexRarity === "all" || cards[id].rarity === codexRarity,
+  );
   const [s, rawDispatch] = useReducer(
     (s: State, a: Action | { type: "reset"; seed?: number }) =>
       a.type === "reset" ? session.newGame(a.seed) : applyAction(s, a),
@@ -599,8 +604,23 @@ function App() {
           </button>
         </div>
         <p className="muted">전체 {Object.keys(cards).length}종 · 등급과 효과를 확인하세요.</p>
+        <div className="codex-filters" role="group" aria-label="증강 등급 필터">
+          {(["all", ...Object.keys(rarities)] as (Rarity | "all")[]).map((rarity) => (
+            <button
+              key={rarity}
+              className="secondary"
+              aria-pressed={codexRarity === rarity}
+              onClick={() => setCodexRarity(rarity)}
+            >
+              {rarity === "all" ? "전체" : rarities[rarity].label}
+            </button>
+          ))}
+        </div>
+        <p className="muted" role="status">
+          {codexRarity === "all" ? "전체" : rarities[codexRarity].label} {codexIds.length}종
+        </p>
         <div className="codex-grid">
-          {(Object.keys(cards) as Id[]).map((id) => (
+          {codexIds.map((id) => (
             <article className="owned" key={id} data-rarity={cards[id].rarity}>
               <div className="card-label">
                 {id} · {rarities[cards[id].rarity].label} · {isActive(id) ? "사용형" : "패시브"}
@@ -610,6 +630,7 @@ function App() {
             </article>
           ))}
         </div>
+        {!codexIds.length && <p className="muted">해당 등급의 증강이 없습니다.</p>}
       </dialog>
       {s.phase === "draft" && !motion.length && (
         <div className="overlay">

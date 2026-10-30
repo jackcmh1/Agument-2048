@@ -329,6 +329,21 @@ small {
   margin-top: 20px;
 }
 .codex-grid .owned { margin: 0; }
+.codex-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 16px;
+}
+.codex-filters button {
+  min-height: 44px;
+  padding: 8px 16px;
+}
+.codex-filters button[aria-pressed="true"] {
+  background: var(--text);
+  color: var(--page);
+  border-color: var(--text);
+}
 details {
   font-size: 12px;
   color: var(--caption);

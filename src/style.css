@@ -732,12 +732,12 @@ button:not(.tile):not(.secondary):not(.draft-card):not(.text-button) {
 [data-rarity="uncommon"] {
   --rarity-color: var(--rarity-uncommon);
   --rarity-border: var(--rarity-uncommon-border);
-  --rarity-fill: #cfedff;
+  --rarity-fill: #e6f5ff;
 }
 [data-rarity="rare"] {
   --rarity-color: var(--rarity-rare);
   --rarity-border: var(--rarity-rare-border);
-  --rarity-fill: #ffeb9b;
+  --rarity-fill: #fff3ca;
 }
 [data-rarity="uncommon"],
 [data-rarity="rare"] {
@@ -772,9 +772,9 @@ button:not(.tile):not(.secondary):not(.draft-card):not(.text-button) {
 
 /* Use the shortcut buttons' filled palette across every augment card. */
 [data-rarity="common"] {
-  --rarity-fill: #dcf58a;
-  --rarity-border: #9bb653;
-  --rarity-ink: #465728;
+  --rarity-fill: var(--surface);
+  --rarity-border: var(--card-border);
+  --rarity-ink: var(--text);
 }
 [data-rarity="uncommon"] { --rarity-ink: #216d98; }
 [data-rarity="rare"] { --rarity-ink: #87640b; }
@@ -796,6 +796,25 @@ button:not(.tile):not(.secondary):not(.draft-card):not(.text-button) {
   background: var(--rarity-fill);
   border-color: var(--rarity-ink);
   box-shadow: inset 0 0 0 1px var(--rarity-ink);
+}
+
+/* Common cards remain neutral and follow the active theme. */
+:is(.owned, .draft-card, .passive-chip)[data-rarity="common"] {
+  color: var(--text);
+  --card-text: var(--subtle);
+  --draft-description: var(--subtle);
+}
+.augment-shortcuts > button[data-rarity="common"],
+.owned[data-rarity="common"] button {
+  background: var(--surface) !important;
+  color: var(--text);
+  border: 1px solid var(--button-border);
+}
+.augment-shortcuts > button[data-rarity="common"] small {
+  color: var(--subtle);
+}
+:root[data-theme="dark"] :is(.owned, .draft-card, .passive-chip)[data-rarity="common"] {
+  --augment-alert: #ff9299;
 }
 
 :root { --augment-alert: #b52e35; }

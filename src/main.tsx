@@ -18,6 +18,7 @@ import {
   type Action,
   type Direction,
   type State,
+  type Id,
 } from "./engine";
 import "./style.css";
 import { augmentStatus } from "./augmentStatus";
@@ -31,6 +32,7 @@ function load(): State {
   return createGame();
 }
 function App() {
+  const codexRef = useRef<HTMLDialogElement>(null);
   const [s, rawDispatch] = useReducer(
     (s: State, a: Action | { type: "reset"; seed?: number }) =>
       a.type === "reset" ? createGame(a.seed) : applyAction(s, a),
@@ -145,6 +147,7 @@ function App() {
   }, [s]);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
+      if (codexRef.current?.open) return;
       if ((e.target as HTMLElement).matches("input,textarea,select")) return;
       const d: Record<string, Direction> = {
         ArrowLeft: "left",
@@ -206,6 +209,9 @@ function App() {
           </button>
           <button className="secondary" onClick={reset}>
             새 게임 ↗
+          </button>
+          <button className="secondary" onClick={() => codexRef.current?.showModal()}>
+            증강 도감
           </button>
         </div>
       </header>
@@ -425,7 +431,7 @@ function App() {
                   : "효과 꺼짐"}
             </small>
           </div>
-          <div className="direction-pad" aria-label="방향 조작">
+          <div className="direction-pad" aria-label="방향 조작" hidden>
             {(["left", "up", "down", "right"] as Direction[]).map((d, i) => (
               <button
                 key={d}
@@ -518,6 +524,37 @@ function App() {
       <footer>
         AUGMENTED 2048 <span>하나의 선택이 다음 수를 바꿉니다.</span>
       </footer>
+      <dialog
+        ref={codexRef}
+        className="augment-codex"
+        aria-labelledby="codex-title"
+        onClick={(e) => {
+          if (e.target === e.currentTarget) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom)
+              e.currentTarget.close();
+          }
+        }}
+      >
+        <div className="section-title">
+          <h2 id="codex-title">증강 도감</h2>
+          <button className="secondary" onClick={() => codexRef.current?.close()} autoFocus>
+            닫기 ×
+          </button>
+        </div>
+        <p className="muted">전체 {Object.keys(cards).length}종 · 등급과 효과를 확인하세요.</p>
+        <div className="codex-grid">
+          {(Object.keys(cards) as Id[]).map((id) => (
+            <article className="owned" key={id} data-rarity={cards[id].rarity}>
+              <div className="card-label">
+                {id} · {rarities[cards[id].rarity].label} · {["B01", "B02"].includes(id) ? "사용형" : "패시브"}
+              </div>
+              <h3>{cards[id].name}</h3>
+              <p>{cards[id].description}</p>
+            </article>
+          ))}
+        </div>
+      </dialog>
       {s.phase === "draft" && !motion.length && (
         <div className="overlay">
           <section

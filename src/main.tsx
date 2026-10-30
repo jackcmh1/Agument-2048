@@ -13,6 +13,8 @@ import {
   canDuplicate,
   canSwapTiles,
   canGrow,
+  canKnightMerge,
+  knightTargets,
   type ActiveId,
   cards,
   rarities,
@@ -36,7 +38,7 @@ function load(): State {
   try {
     const v = JSON.parse(localStorage.getItem(KEY) || "null");
     if (v?.version === 1 && v.state?.board?.length === 16)
-      return { continued: false, copySource: null, swapSource: null, ...v.state };
+      return { continued: false, copySource: null, swapSource: null, knightSource: null, ...v.state };
   } catch {}
   return session.newGame();
 }
@@ -260,7 +262,7 @@ function App() {
       </header>
       {session.testMode && (
         <p className="test-mode-banner" role="status">
-          테스트 모드 · 1024 두 개 / 테스트 증강 5종 · 재시작하면 초기 설정으로 돌아갑니다.
+          테스트 모드 · 1024 두 개 / 테스트 증강 6종 · 재시작하면 초기 설정으로 돌아갑니다.
         </p>
       )}
       <div className="layout">
@@ -333,9 +335,9 @@ function App() {
               <button
                 key={i}
                 data-index={i}
-                aria-pressed={s.target === "B03" ? s.copySource === i : s.target === "B04" ? s.swapSource === i : undefined}
+                aria-pressed={s.target === "B03" ? s.copySource === i : s.target === "B04" ? s.swapSource === i : s.target === "B06" ? s.knightSource === i : undefined}
                 aria-label={`${Math.floor(i / 4) + 1}행 ${(i % 4) + 1}열 ${v || "빈칸"}`}
-                className={`tile v${v} ${v >= 4096 ? "high-value" : ""} ${motion.some((tile) => tile.to === i) ? "motion-hidden" : ""} ${merged.includes(i) ? "merged" : ""} ${s.choices.includes(i) ? "candidate" : ""} ${s.target === "B01" && [2, 4].includes(v) ? "candidate" : ""} ${s.target === "B05" && [2, 4, 8].includes(v) ? "candidate" : ""} ${s.target === "B03" && (s.copySource == null ? v > 0 : v === 0) ? "candidate" : ""} ${s.target === "B03" && s.copySource === i ? "copy-source" : ""} ${s.target === "B04" && v > 0 && (s.swapSource == null || v !== s.board[s.swapSource]) ? "candidate" : ""} ${s.target === "B04" && s.swapSource === i ? "copy-source" : ""}`}
+                className={`tile v${v} ${v >= 4096 ? "high-value" : ""} ${motion.some((tile) => tile.to === i) ? "motion-hidden" : ""} ${merged.includes(i) ? "merged" : ""} ${s.choices.includes(i) ? "candidate" : ""} ${s.target === "B01" && [2, 4].includes(v) ? "candidate" : ""} ${s.target === "B05" && [2, 4, 8].includes(v) ? "candidate" : ""} ${s.target === "B03" && (s.copySource == null ? v > 0 : v === 0) ? "candidate" : ""} ${s.target === "B03" && s.copySource === i ? "copy-source" : ""} ${s.target === "B04" && v > 0 && (s.swapSource == null || v !== s.board[s.swapSource]) ? "candidate" : ""} ${s.target === "B04" && s.swapSource === i ? "copy-source" : ""} ${s.target === "B06" && (s.knightSource == null ? knightTargets(s, i).length > 0 : knightTargets(s, s.knightSource).includes(i)) ? "candidate" : ""} ${s.target === "B06" && s.knightSource === i ? "copy-source" : ""}`}
                 onClick={(e) => {
                   if (e.detail === 0 && s.target !== "B02")
                     dispatch(
@@ -413,6 +415,7 @@ function App() {
                       (id === "B03" && !canDuplicate(s)) ||
                       (id === "B04" && !canSwapTiles(s)) ||
                       (id === "B05" && !canGrow(s)) ||
+                      (id === "B06" && !canKnightMerge(s)) ||
                       s.phase !== "play" ||
                       (!!s.target && s.target !== id) ||
                       !!motion.length
@@ -453,6 +456,10 @@ function App() {
               ? "빛나는 빈칸 중 생성 위치를 선택하세요."
               : s.target === "B01"
                 ? "제거할 2 또는 4 타일을 선택하세요."
+                : s.target === "B06"
+                  ? s.knightSource == null
+                    ? "빛나는 타일 중 첫 번째 타일을 선택하세요. 나이트 거리의 같은 숫자와 합칩니다."
+                    : "빛나는 상대 타일을 선택하세요. 두 번째 위치에 합성됩니다. 첫 타일을 다시 누르면 선택 해제됩니다."
                 : s.target === "B05"
                   ? "성장시킬 2·4·8 타일을 선택하세요."
                 : s.target === "B04"
@@ -548,6 +555,7 @@ function App() {
                       (id === "B03" && !canDuplicate(s)) ||
                       (id === "B04" && !canSwapTiles(s)) ||
                       (id === "B05" && !canGrow(s)) ||
+                      (id === "B06" && !canKnightMerge(s)) ||
                     s.phase !== "play" ||
                     (!!s.target && s.target !== id)
                   }

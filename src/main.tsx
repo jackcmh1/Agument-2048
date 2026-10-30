@@ -31,21 +31,21 @@ import "./style.css";
 import { AugmentHelp } from "./AugmentHelp";
 import { MoveBuffer } from "./moveBuffer";
 import { gameSession } from "./gameSession";
+import { restoreSavedGame } from "./savedGame";
 import { augmentStatus, compactAugmentStatus } from "./augmentStatus";
 const session = gameSession(window.location.search);
 const KEY = session.storageKey;
 function load(): State {
   try {
-    const v = JSON.parse(localStorage.getItem(KEY) || "null");
-    if (v?.version === 1 && v.state?.board?.length === 16)
-      return { continued: false, copySource: null, swapSource: null, knightSource: null, ...v.state };
+    const restored = restoreSavedGame(localStorage.getItem(KEY));
+    if (restored) return restored;
   } catch {}
   return session.newGame();
 }
 function App() {
   const codexRef = useRef<HTMLDialogElement>(null);
   const [codexRarity, setCodexRarity] = useState<Rarity | "all">("all");
-  const codexIds = (Object.keys(cards) as Id[]).filter(
+  const codexIds = (Object.keys(cards) as Id[]).sort().filter(
     (id) => codexRarity === "all" || cards[id].rarity === codexRarity,
   );
   const [s, rawDispatch] = useReducer(
@@ -185,7 +185,7 @@ function App() {
   }, [motion]);
   const touch = useRef<{ x: number; y: number } | null>(null);
   useEffect(() => {
-    localStorage.setItem(KEY, JSON.stringify({ version: 1, state: s }));
+    localStorage.setItem(KEY, JSON.stringify({ version: 2, state: s }));
   }, [s]);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
@@ -284,7 +284,7 @@ function App() {
           <div className="board-meta">
             <span>{s.turn} MOVES</span>
             <span>
-              {s.owned.includes("G01")
+              {s.owned.includes("A001")
                 ? `다음 타일 ${nextValue(s)}`
                 : "32를 만들어 첫 증강을 만나세요"}
             </span>
@@ -320,7 +320,7 @@ function App() {
                 const el = document
                   .elementFromPoint(e.clientX, e.clientY)
                   ?.closest("[data-index]") as HTMLElement | null;
-                if (el && s.target !== "B02") {
+                if (el && s.target !== "A007") {
                   const i = Number(el.dataset.index);
                   dispatch(
                     s.phase === "spawn"
@@ -335,11 +335,11 @@ function App() {
               <button
                 key={i}
                 data-index={i}
-                aria-pressed={s.target === "B03" ? s.copySource === i : s.target === "B04" ? s.swapSource === i : s.target === "B06" ? s.knightSource === i : undefined}
+                aria-pressed={s.target === "A009" ? s.copySource === i : s.target === "A010" ? s.swapSource === i : s.target === "A014" ? s.knightSource === i : undefined}
                 aria-label={`${Math.floor(i / 4) + 1}행 ${(i % 4) + 1}열 ${v || "빈칸"}`}
-                className={`tile v${v} ${v >= 4096 ? "high-value" : ""} ${motion.some((tile) => tile.to === i) ? "motion-hidden" : ""} ${merged.includes(i) ? "merged" : ""} ${s.choices.includes(i) ? "candidate" : ""} ${s.target === "B01" && [2, 4].includes(v) ? "candidate" : ""} ${s.target === "B05" && [2, 4, 8].includes(v) ? "candidate" : ""} ${s.target === "B03" && (s.copySource == null ? v > 0 : v === 0) ? "candidate" : ""} ${s.target === "B03" && s.copySource === i ? "copy-source" : ""} ${s.target === "B04" && v > 0 && (s.swapSource == null || v !== s.board[s.swapSource]) ? "candidate" : ""} ${s.target === "B04" && s.swapSource === i ? "copy-source" : ""} ${s.target === "B06" && (s.knightSource == null ? knightTargets(s, i).length > 0 : knightTargets(s, s.knightSource).includes(i)) ? "candidate" : ""} ${s.target === "B06" && s.knightSource === i ? "copy-source" : ""}`}
+                className={`tile v${v} ${v >= 4096 ? "high-value" : ""} ${motion.some((tile) => tile.to === i) ? "motion-hidden" : ""} ${merged.includes(i) ? "merged" : ""} ${s.choices.includes(i) ? "candidate" : ""} ${s.target === "A006" && [2, 4].includes(v) ? "candidate" : ""} ${s.target === "A011" && [2, 4, 8].includes(v) ? "candidate" : ""} ${s.target === "A009" && (s.copySource == null ? v > 0 : v === 0) ? "candidate" : ""} ${s.target === "A009" && s.copySource === i ? "copy-source" : ""} ${s.target === "A010" && v > 0 && (s.swapSource == null || v !== s.board[s.swapSource]) ? "candidate" : ""} ${s.target === "A010" && s.swapSource === i ? "copy-source" : ""} ${s.target === "A014" && (s.knightSource == null ? knightTargets(s, i).length > 0 : knightTargets(s, s.knightSource).includes(i)) ? "candidate" : ""} ${s.target === "A014" && s.knightSource === i ? "copy-source" : ""}`}
                 onClick={(e) => {
-                  if (e.detail === 0 && s.target !== "B02")
+                  if (e.detail === 0 && s.target !== "A007")
                     dispatch(
                       s.phase === "spawn"
                         ? { type: "spawn", index: i }
@@ -347,10 +347,10 @@ function App() {
                     );
                 }}
               >
-                {v || (s.choices.includes(i) ? `+${nextValue(s)}` : s.target === "B03" && s.copySource != null ? `+${s.board[s.copySource]}` : "")}
+                {v || (s.choices.includes(i) ? `+${nextValue(s)}` : s.target === "A009" && s.copySource != null ? `+${s.board[s.copySource]}` : "")}
               </button>
             ))}
-            {s.target === "B02" && (
+            {s.target === "A007" && (
               <div className="row-swap-overlay">
                 {[1, 2, 3].map((row) => (
                   <button
@@ -412,10 +412,10 @@ function App() {
                     data-rarity={cards[id].rarity}
                     aria-disabled={
                       !!s.cool[id] ||
-                      (id === "B03" && !canDuplicate(s)) ||
-                      (id === "B04" && !canSwapTiles(s)) ||
-                      (id === "B05" && !canGrow(s)) ||
-                      (id === "B06" && !canKnightMerge(s)) ||
+                      (id === "A009" && !canDuplicate(s)) ||
+                      (id === "A010" && !canSwapTiles(s)) ||
+                      (id === "A011" && !canGrow(s)) ||
+                      (id === "A014" && !canKnightMerge(s)) ||
                       s.phase !== "play" ||
                       (!!s.target && s.target !== id) ||
                       !!motion.length
@@ -454,23 +454,23 @@ function App() {
           <div className="instruction" role="status">
             {s.phase === "spawn"
               ? "빛나는 빈칸 중 생성 위치를 선택하세요."
-              : s.target === "B01"
+              : s.target === "A006"
                 ? "제거할 2 또는 4 타일을 선택하세요."
-                : s.target === "B06"
+                : s.target === "A014"
                   ? s.knightSource == null
                     ? "빛나는 타일 중 첫 번째 타일을 선택하세요. 나이트 거리의 같은 숫자와 합칩니다."
                     : "빛나는 상대 타일을 선택하세요. 두 번째 위치에 합성됩니다. 첫 타일을 다시 누르면 선택 해제됩니다."
-                : s.target === "B05"
+                : s.target === "A011"
                   ? "성장시킬 2·4·8 타일을 선택하세요."
-                : s.target === "B04"
+                : s.target === "A010"
                   ? s.swapSource == null
                     ? "교환할 첫 번째 숫자 타일을 선택하세요."
                     : "서로 다른 숫자의 두 번째 타일을 선택하세요. 선택한 타일을 다시 누르면 선택이 해제됩니다."
-                : s.target === "B03"
+                : s.target === "A009"
                   ? s.copySource == null
                     ? "복제할 숫자 타일을 선택하세요."
                     : `${s.board[s.copySource]}을 복사할 빈칸을 선택하세요. 다른 숫자를 누르면 복제 대상이 바뀝니다.`
-                : s.target === "B02"
+                : s.target === "A007"
                   ? "교환할 두 행 사이의 ↕ 버튼을 누르세요."
                   : "방향키 / WASD · 모바일에서는 스와이프"}
             {s.target && (
@@ -552,10 +552,10 @@ function App() {
                 <button
                   aria-disabled={
                     !!s.cool[id] ||
-                      (id === "B03" && !canDuplicate(s)) ||
-                      (id === "B04" && !canSwapTiles(s)) ||
-                      (id === "B05" && !canGrow(s)) ||
-                      (id === "B06" && !canKnightMerge(s)) ||
+                      (id === "A009" && !canDuplicate(s)) ||
+                      (id === "A010" && !canSwapTiles(s)) ||
+                      (id === "A011" && !canGrow(s)) ||
+                      (id === "A014" && !canKnightMerge(s)) ||
                     s.phase !== "play" ||
                     (!!s.target && s.target !== id)
                   }

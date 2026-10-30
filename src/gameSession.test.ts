@@ -15,14 +15,14 @@ describe("test game session", () => {
     const s = gameSession("?test").newGame();
     expect(s.board.slice(0, 4)).toEqual([1024, 1024, 0, 0]);
     expect(s.board).toHaveLength(16);
-    expect(s.owned).toEqual(["B03", "B04", "B05", "G04", "G05", "B06"]);
-    expect(s.cool).toEqual({ B03: 0, B04: 0, B05: 0, B06: 0 });
+    expect(s.owned).toEqual(["A009", "A010", "A011", "A012", "A013", "A014"]);
+    expect(s.cool).toEqual({ A009: 0, A010: 0, A011: 0, A014: 0 });
     expect(s.reached).toEqual(goals);
     expect(s.phase).toBe("play");
-    expect(applyAction(s, { type: "ability", id: "B03" }).target).toBe("B03");
-    expect(applyAction(s, { type: "ability", id: "B04" }).target).toBe("B04");
+    expect(applyAction(s, { type: "ability", id: "A009" }).target).toBe("A009");
+    expect(applyAction(s, { type: "ability", id: "A010" }).target).toBe("A010");
     // Existing high tiles must not immediately cause a stack of milestone drafts.
-    expect(applyAction(applyAction(s, { type: "ability", id: "B03" }), { type: "cancel" }).phase).toBe("play");
+    expect(applyAction(applyAction(s, { type: "ability", id: "A009" }), { type: "cancel" }).phase).toBe("play");
     expect(applyAction(s, { type: "move", direction: "left" }).phase).toBe("won");
   });
   it("restores a fresh identical fixture after play, victory or arbitrary mutations", () => {
@@ -30,7 +30,7 @@ describe("test game session", () => {
     const initial = session.newGame();
     const changed = applyAction(initial, { type: "move", direction: "left" });
     changed.owned.length = 0;
-    changed.cool.B03 = 60;
+    changed.cool.A009 = 60;
     const reset = session.newGame();
     expect(reset).toEqual(initial);
     expect(reset.board).not.toBe(initial.board);

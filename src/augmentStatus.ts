@@ -1,6 +1,7 @@
 import { canKnightMerge, canGrow, canSwapTiles, canDuplicate, isActive, nextValue, type Id, type State } from "./engine";
 
 export function compactAugmentStatus(s: State, id: Id) {
+  if (id === "A016") return s.stats.A016 ? "소모됨" : "일회용 · 사용하기 ↗";
   if (id === "A015") return `${s.undoCharges}/2회${s.undoCharges < 2 ? ` · 충전 ${s.undoRecharge || 50}이동` : !s.history.length ? " · 기록 없음" : " · 되돌리기"}`;
   if (id === "A012") return "일반 생성 2 고정";
   if (id === "A013") {
@@ -25,6 +26,7 @@ export function compactAugmentStatus(s: State, id: Id) {
 
 export function augmentStatus(s: State, id: Id) {
   const wait = s.cool[id] || 0;
+  if (id === "A016") return { imminent: false, text: s.stats.A016 ? "소모됨 · 재사용 불가" : "일회용 · 모든 타일 두 배 후 다음 생성" };
   if (id === "A015") return {
     imminent: s.undoCharges < 2 && s.undoRecharge === 1,
     text: compactAugmentStatus(s, id),

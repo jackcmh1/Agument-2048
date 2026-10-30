@@ -94,7 +94,7 @@ button {
   padding: 11px 16px;
   font-weight: 700;
 }
-button:disabled {
+button:is(:disabled, [aria-disabled="true"]) {
   cursor: default;
   opacity: 0.45;
 }
@@ -678,7 +678,7 @@ button:not(.tile):not(.secondary):not(.draft-card):not(.text-button) {
 .augment-shortcuts:empty {
   margin: 0;
 }
-.augment-shortcuts > button,
+.augment-shortcuts button,
 .passive-chip {
   display: flex;
   flex-direction: column;
@@ -690,7 +690,7 @@ button:not(.tile):not(.secondary):not(.draft-card):not(.text-button) {
   min-height: 78px;
   justify-content: center;
 }
-.augment-shortcuts > button small {
+.augment-shortcuts button small {
   color: #465728;
   font-size: 10px;
 }
@@ -776,17 +776,17 @@ button:not(.tile):not(.secondary):not(.draft-card):not(.text-button) {
 [data-rarity="rare"].draft-card strong {
   color: var(--rarity-color);
 }
-.augment-shortcuts > button[data-rarity="uncommon"],
-.augment-shortcuts > button[data-rarity="rare"],
+.augment-shortcuts button[data-rarity="uncommon"],
+.augment-shortcuts button[data-rarity="rare"],
 .owned[data-rarity="uncommon"] button,
 .owned[data-rarity="rare"] button {
   background: var(--rarity-fill) !important;
   color: #29303a;
 }
-.augment-shortcuts > button[data-rarity="uncommon"] .rarity-label {
+.augment-shortcuts button[data-rarity="uncommon"] .rarity-label {
   color: #216d98;
 }
-.augment-shortcuts > button[data-rarity="rare"] .rarity-label {
+.augment-shortcuts button[data-rarity="rare"] .rarity-label {
   color: #87640b;
 }
 .rarity-label {
@@ -827,13 +827,13 @@ button:not(.tile):not(.secondary):not(.draft-card):not(.text-button) {
   --card-text: var(--subtle);
   --draft-description: var(--subtle);
 }
-.augment-shortcuts > button[data-rarity="common"],
+.augment-shortcuts button[data-rarity="common"],
 .owned[data-rarity="common"] button {
   background: var(--surface) !important;
   color: var(--text);
   border: 1px solid var(--button-border);
 }
-.augment-shortcuts > button[data-rarity="common"] small {
+.augment-shortcuts button[data-rarity="common"] small {
   color: var(--subtle);
 }
 :root[data-theme="dark"] :is(.owned, .draft-card, .passive-chip)[data-rarity="common"] {
@@ -842,7 +842,7 @@ button:not(.tile):not(.secondary):not(.draft-card):not(.text-button) {
 
 :root { --augment-alert: #b52e35; }
 :root[data-theme="dark"] { --augment-alert: #ff9299; }
-.augment-shortcuts > [data-imminent="true"],
+.augment-shortcuts [data-imminent="true"],
 .owned[data-imminent="true"] {
   border: 2px solid var(--augment-alert);
 }
@@ -851,7 +851,7 @@ button:not(.tile):not(.secondary):not(.draft-card):not(.text-button) {
   line-height: 1.6;
   white-space: normal;
 }
-.augment-shortcuts > [data-imminent="true"] .augment-status,
+.augment-shortcuts [data-imminent="true"] .augment-status,
 .owned[data-imminent="true"] .augment-status {
   color: var(--augment-alert);
   font-weight: 700;
@@ -867,33 +867,58 @@ button:not(.tile):not(.secondary):not(.draft-card):not(.text-button) {
   --ability-disabled-text: #b0b5bf;
   --ability-disabled-border: #555c68;
 }
-.augment-shortcuts > button[data-rarity]:disabled,
-.owned[data-rarity] > button:disabled {
+.augment-shortcuts button[data-rarity]:is(:disabled, [aria-disabled="true"]),
+.owned[data-rarity] > button:is(:disabled, [aria-disabled="true"]) {
   background: var(--ability-disabled-bg) !important;
   color: var(--ability-disabled-text);
   border: 1px solid var(--ability-disabled-border);
   opacity: 1;
   cursor: not-allowed;
 }
-.augment-shortcuts > button[data-rarity]:disabled :is(.rarity-label, small),
-.owned[data-rarity]:has(> button:disabled) .card-label {
+.augment-shortcuts button[data-rarity]:is(:disabled, [aria-disabled="true"]) :is(.rarity-label, small),
+.owned[data-rarity]:has(> button:is(:disabled, [aria-disabled="true"])) .card-label {
   color: var(--ability-disabled-text);
 }
-.owned[data-rarity]:has(> button:disabled) {
+.owned[data-rarity]:has(> button:is(:disabled, [aria-disabled="true"])) {
   background: var(--ability-disabled-bg);
   color: var(--ability-disabled-text);
   --card-text: var(--ability-disabled-text);
   --augment-alert: #b52e35;
 }
-:root[data-theme="dark"] .owned[data-rarity]:has(> button:disabled) {
+:root[data-theme="dark"] .owned[data-rarity]:has(> button:is(:disabled, [aria-disabled="true"])) {
   --augment-alert: #ff9299;
 }
-.owned[data-rarity]:has(> button:disabled):not([data-imminent="true"]) {
+.owned[data-rarity]:has(> button:is(:disabled, [aria-disabled="true"])):not([data-imminent="true"]) {
   border-color: var(--ability-disabled-border);
 }
-.augment-shortcuts > button[data-rarity]:disabled[data-imminent="true"] {
+.augment-shortcuts button[data-rarity]:is(:disabled, [aria-disabled="true"])[data-imminent="true"] {
   border: 2px solid var(--augment-alert);
 }
-.augment-shortcuts > button[data-rarity]:disabled[data-imminent="true"] .augment-status {
+.augment-shortcuts button[data-rarity]:is(:disabled, [aria-disabled="true"])[data-imminent="true"] .augment-status {
   color: var(--augment-alert);
+}
+
+.augment-help-host { display: contents; }
+.augment-help-host > :is(button, .passive-chip, .owned) {
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+.augment-help-host > :focus-visible {
+  outline: 3px solid var(--accent-label);
+  outline-offset: 3px;
+}
+.augment-help-tooltip {
+  position: fixed;
+  z-index: 1000;
+  width: min(320px, calc(100vw - 24px));
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border: 1px solid var(--modal-border);
+  border-radius: 10px;
+  background: var(--modal);
+  color: var(--text);
+  box-shadow: 0 4px 18px #0004;
+  font-size: 13px;
+  line-height: 1.7;
+  pointer-events: none;
 }

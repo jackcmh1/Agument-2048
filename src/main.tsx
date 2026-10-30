@@ -26,6 +26,7 @@ import {
 } from "./engine";
 import "./style.css";
 import { AugmentHelp } from "./AugmentHelp";
+import { MoveBuffer } from "./moveBuffer";
 import { augmentStatus, compactAugmentStatus } from "./augmentStatus";
 const KEY = "augmented2048-v1";
 function load(): State {
@@ -76,12 +77,27 @@ function App() {
   const boardRef = useRef<HTMLDivElement>(null);
   const stateRef = useRef(s);
   const busy = useRef(false);
+  const moveBuffer = useRef(new MoveBuffer());
   const motionTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   stateRef.current = s;
   const dispatch = useCallback(
     (action: Action | { type: "reset"; seed?: number }) => {
-      if (busy.current) return;
       const current = stateRef.current;
+      if (action.type === "reset") {
+        if (motionTimer.current) clearTimeout(motionTimer.current);
+        busy.current = false;
+        moveBuffer.current.clear();
+        setMotion([]);
+        setMerged([]);
+        rawDispatch(action);
+        return;
+      }
+      if (busy.current) {
+        if (action.type === "move" && current.phase === "play" && !current.target && !codexRef.current?.open)
+          moveBuffer.current.push(action.direction);
+        return;
+      }
+      if (action.type !== "move") moveBuffer.current.clear();
       if (
         action.type === "move" &&
         current.phase === "play" &&
@@ -102,6 +118,12 @@ function App() {
             setMotion([]);
             setMerged(result.merged);
             busy.current = false;
+            let direction: Direction | undefined;
+            while (!busy.current && (direction = moveBuffer.current.take(
+              stateRef.current.phase === "play" && !stateRef.current.target && !codexRef.current?.open,
+            ))) {
+              dispatch({ type: "move", direction });
+            }
           }, 150);
         }
       } else setMerged([]);
@@ -112,9 +134,15 @@ function App() {
   useEffect(
     () => () => {
       if (motionTimer.current) clearTimeout(motionTimer.current);
+      moveBuffer.current.clear();
     },
     [],
   );
+  useEffect(() => {
+    const clear = () => moveBuffer.current.clear();
+    window.addEventListener("blur", clear);
+    return () => window.removeEventListener("blur", clear);
+  }, []);
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem("augmented2048-theme", theme);
@@ -215,7 +243,10 @@ function App() {
           <button className="secondary" onClick={reset}>
             새 게임 ↗
           </button>
-          <button className="secondary" onClick={() => codexRef.current?.showModal()}>
+          <button className="secondary" onClick={() => {
+            moveBuffer.current.clear();
+            codexRef.current?.showModal();
+          }}>
             증강 도감
           </button>
         </div>

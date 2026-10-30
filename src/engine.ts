@@ -1,7 +1,7 @@
-export type ActiveId = "B01" | "B02" | "B03" | "B04" | "B05";
+export type ActiveId = "B01" | "B02" | "B03" | "B04" | "B05" | "B06";
 export type Id = "G01" | "G02" | "G03" | "G04" | "G05" | "M01" | "M02" | ActiveId | "R03";
 export function isActive(id: Id): id is ActiveId {
-  return id === "B01" || id === "B02" || id === "B03" || id === "B04" || id === "B05";
+  return id === "B01" || id === "B02" || id === "B03" || id === "B04" || id === "B05" || id === "B06";
 }
 export const rarities = {
   common: { label: "일반" },
@@ -77,6 +77,11 @@ export const cards: Record<
     rarity: "uncommon",
     description: "선택한 2·4·8 타일 하나를 두 배로 키웁니다. 사용 후 25이동 충전.",
   },
+  B06: {
+    name: "기사의 여정",
+    rarity: "rare",
+    description: "나이트 거리(가로 2·세로 1칸 또는 가로 1·세로 2칸)의 같은 숫자 두 개를 합칩니다. 두 번째 위치에 합성되며 사용 후 40이동 충전.",
+  },
   R03: {
     name: "벼랑 끝의 보상",
     rarity: "rare",
@@ -104,6 +109,7 @@ export type State = {
   target: ActiveId | null;
   copySource: number | null;
   swapSource: number | null;
+  knightSource: number | null;
   log: string[];
   stats: Record<string, number>;
 };
@@ -207,7 +213,8 @@ export function recoverable(s: State) {
       )) ||
     (s.owned.includes("B03") && !s.cool.B03 && canDuplicate(s)) ||
     (s.owned.includes("B04") && !s.cool.B04 && canSwapTiles(s)) ||
-    (s.owned.includes("B05") && !s.cool.B05 && canGrow(s))
+    (s.owned.includes("B05") && !s.cool.B05 && canGrow(s)) ||
+    (s.owned.includes("B06") && !s.cool.B06 && canKnightMerge(s))
   );
 }
 export function canDuplicate(s: State) {
@@ -218,6 +225,35 @@ export function canSwapTiles(s: State) {
 }
 export function canGrow(s: State) {
   return s.board.some((v) => [2, 4, 8].includes(v));
+}
+export function knightTargets(s: State, index: number) {
+  if (!Number.isInteger(index) || index < 0 || index >= 16 || !s.board[index]) return [];
+  const row = Math.floor(index / 4), col = index % 4;
+  return s.board.flatMap((value, i) => {
+    const dr = Math.abs(Math.floor(i / 4) - row), dc = Math.abs(i % 4 - col);
+    return value === s.board[index] && ((dr === 2 && dc === 1) || (dr === 1 && dc === 2)) ? [i] : [];
+  });
+}
+export function canKnightMerge(s: State) {
+  return s.board.some((_, i) => knightTargets(s, i).length > 0);
+}
+function cleanSmallTiles(s: State, small: number, merged: number[]) {
+  if (s.owned.includes("M02")) {
+    s.small += small;
+    s.pendingClean += Math.floor(s.small / 3);
+    s.small %= 3;
+    while (s.pendingClean) {
+      const candidates = s.board
+        .flatMap((v, i) =>
+          [2, 4].includes(v) && !merged.includes(i) ? [i] : [],
+        )
+        .sort((a, b) => s.board[a] - s.board[b] || a - b);
+      if (!candidates.length) break;
+      s.board[candidates[0]] = 0;
+      s.pendingClean--;
+      fire(s, "M02", "정리의 달인 — 작은 타일 제거");
+    }
+  }
 }
 function finish(s: State) {
   if (!s.continued && s.board.some((v) => v >= 2048)) {
@@ -284,6 +320,7 @@ export function createGame(seed = Date.now() >>> 0): State {
     target: null,
     copySource: null,
     swapSource: null,
+    knightSource: null,
     log: ["새로운 빌드를 시작하세요."],
     stats: {},
   };
@@ -307,6 +344,7 @@ export function applyAction(state: State, action: Action): State {
     s.target = null;
     s.copySource = null;
     s.swapSource = null;
+    s.knightSource = null;
     return s;
   }
   if (
@@ -339,9 +377,11 @@ export function applyAction(state: State, action: Action): State {
     if (action.id === "B03" && !canDuplicate(s)) return state;
     if (action.id === "B04" && !canSwapTiles(s)) return state;
     if (action.id === "B05" && !canGrow(s)) return state;
+    if (action.id === "B06" && !canKnightMerge(s)) return state;
     s.target = s.target === action.id ? null : action.id;
     s.copySource = null;
     s.swapSource = null;
+    s.knightSource = null;
     return s;
   }
   if (action.type === "target" && s.target) {
@@ -352,6 +392,23 @@ export function applyAction(state: State, action: Action): State {
       s.board[i] = 0;
       s.cool.B01 = 15;
       fire(s, "B01", "긴급 정리 — 타일 제거");
+    } else if (s.target === "B06") {
+      if (s.knightSource == null) {
+        if (!knightTargets(s, i).length) return state;
+        s.knightSource = i;
+        return s;
+      }
+      if (s.knightSource === i) {
+        s.knightSource = null;
+        return s;
+      }
+      if (!knightTargets(s, s.knightSource).includes(i)) return state;
+      s.board[i] *= 2;
+      s.board[s.knightSource] = 0;
+      s.score += s.board[i];
+      s.cool.B06 = 40;
+      fire(s, "B06", `기사의 여정 — ${s.board[i]} 합성`);
+      cleanSmallTiles(s, s.board[i] === 4 ? 1 : 0, [i]);
     } else if (s.target === "B05") {
       if (![2, 4, 8].includes(s.board[i])) return state;
       s.board[i] *= 2;
@@ -394,6 +451,7 @@ export function applyAction(state: State, action: Action): State {
     s.target = null;
     s.copySource = null;
     s.swapSource = null;
+    s.knightSource = null;
     finish(s);
     return s;
   }
@@ -410,22 +468,7 @@ export function applyAction(state: State, action: Action): State {
       s.cool[id]--;
       if (!s.cool[id]) note(s, `${cards[id as Id].name} 준비 완료`);
     }
-  if (s.owned.includes("M02")) {
-    s.small += m.small;
-    s.pendingClean += Math.floor(s.small / 3);
-    s.small %= 3;
-    while (s.pendingClean) {
-      const candidates = s.board
-        .flatMap((v, i) =>
-          [2, 4].includes(v) && !m.merged.includes(i) ? [i] : [],
-        )
-        .sort((a, b) => s.board[a] - s.board[b] || a - b);
-      if (!candidates.length) break;
-      s.board[candidates[0]] = 0;
-      s.pendingClean--;
-      fire(s, "M02", "정리의 달인 — 작은 타일 제거");
-    }
-  }
+  cleanSmallTiles(s, m.small, m.merged);
   let cancel = false;
   if (s.owned.includes("M01") && !ready.M01 && m.merged.length >= 2) {
     cancel = true;

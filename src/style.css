@@ -924,3 +924,12 @@ button:not(.tile):not(.secondary):not(.draft-card):not(.text-button) {
 }
 
 .tile.copy-source { box-shadow: inset 0 0 0 3px #3b82c4; }
+.test-mode-banner {
+  padding: 10px 14px;
+  border: 1px solid var(--button-border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.6;
+}

@@ -5,11 +5,11 @@ function setup(value = 2) {
   const s = createGame(123);
   s.board = Array(16).fill(0);
   s.board[0] = s.board[6] = value;
-  s.owned = ["B06"];
+  s.owned = ["A014"];
   s.reached = [...goals];
   return s;
 }
-const arm = (s: State) => applyAction(s, { type: "ability", id: "B06" });
+const arm = (s: State) => applyAction(s, { type: "ability", id: "A014" });
 const select = (s: State, index: number) => applyAction(s, { type: "target", index });
 describe("knights journey", () => {
   it("respects two-dimensional knight geometry without wrapping at board edges", () => {
@@ -32,8 +32,8 @@ describe("knights journey", () => {
     expect(n.board[0]).toBe(0);
     expect(n.board[6]).toBe(256);
     expect(n.score).toBe(256);
-    expect(n.cool.B06).toBe(40);
-    expect(n.stats.B06).toBe(1);
+    expect(n.cool.A014).toBe(40);
+    expect(n.stats.A014).toBe(1);
     expect(n.target).toBeNull();
     expect(n.knightSource).toBeNull();
     for (const key of ["turn", "spawned", "seed", "next"] as const) expect(n[key]).toBe(s[key]);
@@ -53,7 +53,7 @@ describe("knights journey", () => {
       expect(cancelled.target).toBeNull();
       expect(cancelled.knightSource).toBeNull();
       expect(cancelled.board).toEqual(s.board);
-      expect(cancelled.cool.B06).toBeUndefined();
+      expect(cancelled.cool.A014).toBeUndefined();
       expect(arm(state).knightSource).toBeNull();
     }
     expect(select(JSON.parse(JSON.stringify(first)), 6).board[6]).toBe(4);
@@ -63,14 +63,14 @@ describe("knights journey", () => {
     const unowned = setup(); unowned.owned = [];
     expect(arm(unowned)).toBe(unowned);
   });
-  it("feeds 2+2 into M02 while protecting the newly merged tile", () => {
-    const s = setup(); s.owned.push("M02"); s.small = 2; s.board[15] = 2;
+  it("feeds 2+2 into A005 while protecting the newly merged tile", () => {
+    const s = setup(); s.owned.push("A005"); s.small = 2; s.board[15] = 2;
     const n = select(select(arm(s), 0), 6);
     expect(n.board[6]).toBe(4);
     expect(n.board[15]).toBe(0);
     expect(n.small).toBe(0);
     expect(n.pendingClean).toBe(0);
-    expect(n.stats.M02).toBe(1);
+    expect(n.stats.A005).toBe(1);
   });
   it("handles milestones and victory after the ability merge", () => {
     const s = setup(16); s.reached = [];
@@ -91,10 +91,10 @@ describe("knights journey", () => {
       expect(applyAction(s, { type: "move", direction: "left" })).toBe(s);
       s.board = [2,2,...Array(14).fill(0)];
       s = applyAction(s, { type: "move", direction: "left" });
-      expect(s.cool.B06).toBe(remaining);
+      expect(s.cool.A014).toBe(remaining);
       if (remaining) expect(arm(s)).toBe(s);
     }
     s.board = setup().board;
-    expect(arm(s).target).toBe("B06");
+    expect(arm(s).target).toBe("A014");
   });
 });

@@ -1,7 +1,7 @@
-export type ActiveId = "B01" | "B02" | "B03" | "B04" | "B05" | "B06";
-export type Id = "G01" | "G02" | "G03" | "G04" | "G05" | "M01" | "M02" | ActiveId | "R03";
+export type ActiveId = "A006" | "A007" | "A009" | "A010" | "A011" | "A014";
+export type Id = "A001" | "A002" | "A003" | "A012" | "A013" | "A004" | "A005" | ActiveId | "A008";
 export function isActive(id: Id): id is ActiveId {
-  return id === "B01" || id === "B02" || id === "B03" || id === "B04" || id === "B05" || id === "B06";
+  return id === "A006" || id === "A007" || id === "A009" || id === "A010" || id === "A011" || id === "A014";
 }
 export const rarities = {
   common: { label: "일반" },
@@ -15,74 +15,74 @@ export const cards: Record<
   Id,
   { name: string; rarity: Rarity; description: string }
 > = {
-  G01: {
+  A001: {
     name: "생성 예고",
     rarity: "common",
     description: "다음에 생성될 숫자를 미리 확인합니다.",
   },
-  G02: {
+  A002: {
     name: "선택받은 탄생",
     rarity: "rare",
     description: "매 5번째 생성은 빈칸 후보 두 곳 중 위치를 선택합니다.",
   },
-  G03: {
+  A003: {
     name: "고급 생산 라인",
     rarity: "common",
     description: "매 5번째 생성 숫자가 반드시 4가 됩니다.",
   },
-  G04: {
+  A012: {
     name: "작은 수의 법칙",
     rarity: "common",
     description: "일반 생성 숫자가 항상 2가 됩니다. 고급 생산 라인의 매 5번째 4 생성은 유지됩니다.",
   },
-  G05: {
+  A013: {
     name: "쌍둥이 탄생",
     rarity: "uncommon",
     description: "매 16번째 일반 생성에서 같은 숫자를 하나 더 생성합니다. 빈칸이 부족하면 하나만 생성합니다.",
   },
-  M01: {
+  A004: {
     name: "연쇄 반응",
     rarity: "rare",
     description:
       "한 이동에서 2쌍 이상 합성하면 생성을 취소합니다. 이후 4이동 대기.",
   },
-  M02: {
+  A005: {
     name: "정리의 달인",
     rarity: "common",
     description:
       "2+2 합성 3회마다 작은 타일을 제거합니다. 방금 합성된 타일은 보호됩니다.",
   },
-  B01: {
+  A006: {
     name: "긴급 정리",
     rarity: "common",
     description: "2 또는 4 타일 하나를 터치해 제거합니다. 사용 후 15이동 충전.",
   },
-  B02: {
+  A007: {
     name: "차원 교환",
     rarity: "rare",
     description: "인접한 두 행을 교환합니다. 사용 후 12이동 충전.",
   },
-  B03: {
+  A009: {
     name: "타일 복제",
     rarity: "rare",
     description: "숫자 타일을 선택한 뒤 빈칸을 선택해 복사합니다. 사용 후 60이동 충전.",
   },
-  B04: {
+  A010: {
     name: "타일 교환",
     rarity: "uncommon",
     description: "서로 다른 숫자 타일 두 개를 선택해 위치를 바꿉니다. 사용 후 40이동 충전.",
   },
-  B05: {
+  A011: {
     name: "성장 촉진",
     rarity: "uncommon",
     description: "선택한 2·4·8 타일 하나를 두 배로 키웁니다. 사용 후 25이동 충전.",
   },
-  B06: {
+  A014: {
     name: "기사의 여정",
     rarity: "rare",
     description: "나이트 거리(가로 2·세로 1칸 또는 가로 1·세로 2칸)의 같은 숫자 두 개를 합칩니다. 두 번째 위치에 합성되며 사용 후 40이동 충전.",
   },
-  R03: {
+  A008: {
     name: "벼랑 끝의 보상",
     rarity: "rare",
     description:
@@ -137,7 +137,7 @@ function fire(s: State, id: Id, t: string) {
   note(s, t);
 }
 export function nextValue(s: State) {
-  return s.owned.includes("G03") && (s.spawned + 1) % 5 === 0 ? 4 : s.owned.includes("G04") ? 2 : s.next;
+  return s.owned.includes("A003") && (s.spawned + 1) % 5 === 0 ? 4 : s.owned.includes("A012") ? 2 : s.next;
 }
 export function movement(board: number[], direction: Direction) {
   const out = [...board],
@@ -201,20 +201,20 @@ export function canMove(b: number[]) {
 }
 export function recoverable(s: State) {
   return (
-    (s.owned.includes("B01") &&
-      !s.cool.B01 &&
+    (s.owned.includes("A006") &&
+      !s.cool.A006 &&
       s.board.some((v) => v === 2 || v === 4)) ||
-    (s.owned.includes("B02") &&
-      !s.cool.B02 &&
+    (s.owned.includes("A007") &&
+      !s.cool.A007 &&
       [0, 1, 2].some((r) =>
         s.board
           .slice(r * 4, r * 4 + 4)
           .some((v, i) => v !== s.board[(r + 1) * 4 + i]),
       )) ||
-    (s.owned.includes("B03") && !s.cool.B03 && canDuplicate(s)) ||
-    (s.owned.includes("B04") && !s.cool.B04 && canSwapTiles(s)) ||
-    (s.owned.includes("B05") && !s.cool.B05 && canGrow(s)) ||
-    (s.owned.includes("B06") && !s.cool.B06 && canKnightMerge(s))
+    (s.owned.includes("A009") && !s.cool.A009 && canDuplicate(s)) ||
+    (s.owned.includes("A010") && !s.cool.A010 && canSwapTiles(s)) ||
+    (s.owned.includes("A011") && !s.cool.A011 && canGrow(s)) ||
+    (s.owned.includes("A014") && !s.cool.A014 && canKnightMerge(s))
   );
 }
 export function canDuplicate(s: State) {
@@ -238,7 +238,7 @@ export function canKnightMerge(s: State) {
   return s.board.some((_, i) => knightTargets(s, i).length > 0);
 }
 function cleanSmallTiles(s: State, small: number, merged: number[]) {
-  if (s.owned.includes("M02")) {
+  if (s.owned.includes("A005")) {
     s.small += small;
     s.pendingClean += Math.floor(s.small / 3);
     s.small %= 3;
@@ -251,7 +251,7 @@ function cleanSmallTiles(s: State, small: number, merged: number[]) {
       if (!candidates.length) break;
       s.board[candidates[0]] = 0;
       s.pendingClean--;
-      fire(s, "M02", "정리의 달인 — 작은 타일 제거");
+      fire(s, "A005", "정리의 달인 — 작은 타일 제거");
     }
   }
 }
@@ -283,16 +283,16 @@ function finish(s: State) {
   s.phase = canMove(s.board) || recoverable(s) ? "play" : "lost";
 }
 function spawn(s: State, index: number) {
-  if (s.owned.includes("G03") && (s.spawned + 1) % 5 === 0)
-    fire(s, "G03", "고급 생산 라인 — 4 생성");
+  if (s.owned.includes("A003") && (s.spawned + 1) % 5 === 0)
+    fire(s, "A003", "고급 생산 라인 — 4 생성");
   const value = nextValue(s);
   s.board[index] = value;
   s.spawned++;
-  if (s.owned.includes("G05") && s.spawned % 16 === 0) {
+  if (s.owned.includes("A013") && s.spawned % 16 === 0) {
     const spaces = empty(s.board);
     if (spaces.length) {
       s.board[sample(s, spaces)] = value;
-      fire(s, "G05", `쌍둥이 탄생 — ${value} 추가 생성`);
+      fire(s, "A013", `쌍둥이 탄생 — ${value} 추가 생성`);
     } else note(s, "쌍둥이 탄생 — 빈칸 부족으로 하나만 생성");
   }
   s.next = random(s) < 0.9 ? 2 : 4;
@@ -374,10 +374,10 @@ export function applyAction(state: State, action: Action): State {
     s.owned.includes(action.id) &&
     !s.cool[action.id]
   ) {
-    if (action.id === "B03" && !canDuplicate(s)) return state;
-    if (action.id === "B04" && !canSwapTiles(s)) return state;
-    if (action.id === "B05" && !canGrow(s)) return state;
-    if (action.id === "B06" && !canKnightMerge(s)) return state;
+    if (action.id === "A009" && !canDuplicate(s)) return state;
+    if (action.id === "A010" && !canSwapTiles(s)) return state;
+    if (action.id === "A011" && !canGrow(s)) return state;
+    if (action.id === "A014" && !canKnightMerge(s)) return state;
     s.target = s.target === action.id ? null : action.id;
     s.copySource = null;
     s.swapSource = null;
@@ -387,12 +387,12 @@ export function applyAction(state: State, action: Action): State {
   if (action.type === "target" && s.target) {
     const i = action.index;
     if (!Number.isInteger(i) || i < 0 || i > 15) return state;
-    if (s.target === "B01") {
+    if (s.target === "A006") {
       if (![2, 4].includes(s.board[i])) return state;
       s.board[i] = 0;
-      s.cool.B01 = 15;
-      fire(s, "B01", "긴급 정리 — 타일 제거");
-    } else if (s.target === "B06") {
+      s.cool.A006 = 15;
+      fire(s, "A006", "긴급 정리 — 타일 제거");
+    } else if (s.target === "A014") {
       if (s.knightSource == null) {
         if (!knightTargets(s, i).length) return state;
         s.knightSource = i;
@@ -406,15 +406,15 @@ export function applyAction(state: State, action: Action): State {
       s.board[i] *= 2;
       s.board[s.knightSource] = 0;
       s.score += s.board[i];
-      s.cool.B06 = 40;
-      fire(s, "B06", `기사의 여정 — ${s.board[i]} 합성`);
+      s.cool.A014 = 40;
+      fire(s, "A014", `기사의 여정 — ${s.board[i]} 합성`);
       cleanSmallTiles(s, s.board[i] === 4 ? 1 : 0, [i]);
-    } else if (s.target === "B05") {
+    } else if (s.target === "A011") {
       if (![2, 4, 8].includes(s.board[i])) return state;
       s.board[i] *= 2;
-      s.cool.B05 = 25;
-      fire(s, "B05", `성장 촉진 — ${s.board[i]}로 성장`);
-    } else if (s.target === "B04") {
+      s.cool.A011 = 25;
+      fire(s, "A011", `성장 촉진 — ${s.board[i]}로 성장`);
+    } else if (s.target === "A010") {
       if (!s.board[i]) return state;
       if (s.swapSource == null) {
         s.swapSource = i;
@@ -426,17 +426,17 @@ export function applyAction(state: State, action: Action): State {
       }
       if (!s.board[s.swapSource] || s.board[i] === s.board[s.swapSource]) return state;
       [s.board[i], s.board[s.swapSource]] = [s.board[s.swapSource], s.board[i]];
-      s.cool.B04 = 40;
-      fire(s, "B04", "타일 교환 — 두 타일 위치 교환");
-    } else if (s.target === "B03") {
+      s.cool.A010 = 40;
+      fire(s, "A010", "타일 교환 — 두 타일 위치 교환");
+    } else if (s.target === "A009") {
       if (s.board[i] > 0) {
         s.copySource = i;
         return s;
       }
       if (s.copySource == null || !s.board[s.copySource]) return state;
       s.board[i] = s.board[s.copySource];
-      s.cool.B03 = 60;
-      fire(s, "B03", `타일 복제 — ${s.board[i]} 복사`);
+      s.cool.A009 = 60;
+      fire(s, "A009", `타일 복제 — ${s.board[i]} 복사`);
     } else {
       const r = Math.floor(i / 4);
       if (r >= 3) return state;
@@ -445,8 +445,8 @@ export function applyAction(state: State, action: Action): State {
           s.board[(r + 1) * 4 + c],
           s.board[r * 4 + c],
         ];
-      s.cool.B02 = 12;
-      fire(s, "B02", `${r + 1}·${r + 2}행 교환`);
+      s.cool.A007 = 12;
+      fire(s, "A007", `${r + 1}·${r + 2}행 교환`);
     }
     s.target = null;
     s.copySource = null;
@@ -470,20 +470,20 @@ export function applyAction(state: State, action: Action): State {
     }
   cleanSmallTiles(s, m.small, m.merged);
   let cancel = false;
-  if (s.owned.includes("M01") && !ready.M01 && m.merged.length >= 2) {
+  if (s.owned.includes("A004") && !ready.A004 && m.merged.length >= 2) {
     cancel = true;
-    s.cool.M01 = 4;
-    fire(s, "M01", "연쇄 반응 — 생성 취소");
+    s.cool.A004 = 4;
+    fire(s, "A004", "연쇄 반응 — 생성 취소");
   }
   if (
-    s.owned.includes("R03") &&
-    !ready.R03 &&
+    s.owned.includes("A008") &&
+    !ready.A008 &&
     beforeEmpty <= 2 &&
     m.merged.length
   ) {
     cancel = true;
-    s.cool.R03 = 8;
-    fire(s, "R03", "벼랑 끝의 보상 — 생성 취소");
+    s.cool.A008 = 8;
+    fire(s, "A008", "벼랑 끝의 보상 — 생성 취소");
   }
   if (cancel) {
     finish(s);
@@ -491,7 +491,7 @@ export function applyAction(state: State, action: Action): State {
   }
   const spaces = empty(s.board);
   if (
-    s.owned.includes("G02") &&
+    s.owned.includes("A002") &&
     (s.spawned + 1) % 5 === 0 &&
     spaces.length > 1
   ) {
@@ -502,7 +502,7 @@ export function applyAction(state: State, action: Action): State {
       );
     s.choices = [a, b];
     s.phase = "spawn";
-    fire(s, "G02", "생성 위치를 선택하세요");
+    fire(s, "A002", "생성 위치를 선택하세요");
     return s;
   }
   if (spaces.length) spawn(s, sample(s, spaces));

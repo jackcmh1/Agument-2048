@@ -24,24 +24,24 @@ const move = (s: State, d: Direction = "left") =>
 describe("tile swap", () => {
   const select = (s: State, index: number) => applyAction(s, { type: "target", index });
   it("swaps distant numbered tiles without spawning, scoring or consuming a move", () => {
-    const s = setup([2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1024], ["B04"]);
-    const armed = applyAction(s, { type: "ability", id: "B04" });
+    const s = setup([2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1024], ["A010"]);
+    const armed = applyAction(s, { type: "ability", id: "A010" });
     const first = select(armed, 0);
     expect(first.swapSource).toBe(0);
     expect(move(first)).toBe(first);
     const n = select(first, 15);
     expect(n.board[0]).toBe(1024);
     expect(n.board[15]).toBe(2);
-    expect(n.cool.B04).toBe(40);
-    expect(n.stats.B04).toBe(1);
+    expect(n.cool.A010).toBe(40);
+    expect(n.stats.A010).toBe(1);
     expect(n.target).toBeNull();
     expect(n.swapSource).toBeNull();
     for (const key of ["turn", "spawned", "score", "seed", "next", "small"] as const)
       expect(n[key]).toBe(s[key]);
   });
   it("rejects empty/equal targets and supports deselection, cancellation and saved selection", () => {
-    const s = setup([2, 2, 4], ["B04"]);
-    const armed = applyAction(s, { type: "ability", id: "B04" });
+    const s = setup([2, 2, 4], ["A010"]);
+    const armed = applyAction(s, { type: "ability", id: "A010" });
     expect(select(armed, 3)).toBe(armed);
     const first = select(armed, 0);
     for (const i of [1, 3, -1, 16, 0.5]) expect(select(first, i)).toBe(first);
@@ -51,61 +51,61 @@ describe("tile swap", () => {
       expect(cancelled.swapSource).toBeNull();
       expect(cancelled.target).toBeNull();
       expect(cancelled.board).toEqual(s.board);
-      expect(cancelled.cool.B04).toBeUndefined();
-      expect(applyAction(state, { type: "ability", id: "B04" }).swapSource).toBeNull();
+      expect(cancelled.cool.A010).toBeUndefined();
+      expect(applyAction(state, { type: "ability", id: "A010" }).swapSource).toBeNull();
     }
     expect(select(JSON.parse(JSON.stringify(first)), 2).board.slice(0, 3)).toEqual([4, 2, 2]);
     expect(canSwapTiles(setup([2, 2]))).toBe(false);
     const missing = setup([2, 4]);
-    expect(applyAction(missing, { type: "ability", id: "B04" })).toBe(missing);
+    expect(applyAction(missing, { type: "ability", id: "A010" })).toBe(missing);
   });
   it("keeps a stuck full board recoverable only while charged", () => {
-    const s = setup([2, 4, 2, 4, 4, 2, 4, 2, 2, 4, 2, 4, 4, 2, 4, 2], ["B04"]);
+    const s = setup([2, 4, 2, 4, 4, 2, 4, 2, 2, 4, 2, 4, 4, 2, 4, 2], ["A010"]);
     expect(canMove(s.board)).toBe(false);
     expect(recoverable(s)).toBe(true);
-    const n = select(select(applyAction(s, { type: "ability", id: "B04" }), 0), 1);
+    const n = select(select(applyAction(s, { type: "ability", id: "A010" }), 0), 1);
     expect(n.phase).toBe("play");
     expect(canMove(n.board)).toBe(true);
-    s.cool.B04 = 1;
+    s.cool.A010 = 1;
     expect(recoverable(s)).toBe(false);
-    expect(applyAction(s, { type: "ability", id: "B04" })).toBe(s);
+    expect(applyAction(s, { type: "ability", id: "A010" })).toBe(s);
   });
   it("recharges after forty valid moves, with invalid moves preserving the counter", () => {
-    let s = setup([2], ["B04"]);
-    s.cool.B04 = 40;
+    let s = setup([2], ["A010"]);
+    s.cool.A010 = 40;
     expect(move(s)).toBe(s);
     for (let remaining = 39; remaining >= 0; remaining--) {
       s.board = setup([2, 2, 8]).board;
       s = move(s);
-      expect(s.cool.B04).toBe(remaining);
-      if (remaining) expect(applyAction(s, { type: "ability", id: "B04" })).toBe(s);
+      expect(s.cool.A010).toBe(remaining);
+      if (remaining) expect(applyAction(s, { type: "ability", id: "A010" })).toBe(s);
     }
-    expect(applyAction(s, { type: "ability", id: "B04" }).target).toBe("B04");
+    expect(applyAction(s, { type: "ability", id: "A010" }).target).toBe("A010");
   });
 });
 describe("tile duplication", () => {
   const select = (s: State, index: number) => applyAction(s, { type: "target", index });
   it("copies any selected value into an empty cell without a move or normal spawn", () => {
-    const s = setup([1024, 2], ["B03"]);
-    const armed = applyAction(s, { type: "ability", id: "B03" });
+    const s = setup([1024, 2], ["A009"]);
+    const armed = applyAction(s, { type: "ability", id: "A009" });
     expect(select(armed, 2)).toBe(armed);
     const source = select(armed, 0);
     expect(source.copySource).toBe(0);
-    expect(source.cool.B03).toBeUndefined();
+    expect(source.cool.A009).toBeUndefined();
     expect(move(source)).toBe(source);
     const copied = select(source, 15);
     expect(copied.board[0]).toBe(1024);
     expect(copied.board[15]).toBe(1024);
-    expect(copied.cool.B03).toBe(60);
-    expect(copied.stats.B03).toBe(1);
+    expect(copied.cool.A009).toBe(60);
+    expect(copied.stats.A009).toBe(1);
     expect(copied.target).toBeNull();
     expect(copied.copySource).toBeNull();
     for (const key of ["score", "turn", "spawned", "seed", "next", "small"] as const)
       expect(copied[key]).toBe(s[key]);
   });
   it("changes source without overwriting occupied cells and supports cancelling either step", () => {
-    const s = setup([128, 256], ["B03"]);
-    const armed = applyAction(s, { type: "ability", id: "B03" });
+    const s = setup([128, 256], ["A009"]);
+    const armed = applyAction(s, { type: "ability", id: "A009" });
     const selected = select(select(armed, 0), 1);
     expect(selected.board).toEqual(s.board);
     expect(selected.copySource).toBe(1);
@@ -115,34 +115,34 @@ describe("tile duplication", () => {
       expect(cancelled.board).toEqual(s.board);
       expect(cancelled.target).toBeNull();
       expect(cancelled.copySource).toBeNull();
-      expect(cancelled.cool.B03).toBeUndefined();
-      expect(applyAction(state, { type: "ability", id: "B03" }).target).toBeNull();
+      expect(cancelled.cool.A009).toBeUndefined();
+      expect(applyAction(state, { type: "ability", id: "A009" }).target).toBeNull();
     }
     for (const index of [-1, 16, 0.5]) expect(select(selected, index)).toBe(selected);
   });
   it("requires an owned ready ability, a number and an empty cell", () => {
     const missing = setup([2]);
-    expect(applyAction(missing, { type: "ability", id: "B03" })).toBe(missing);
-    const cooling = setup([2], ["B03"]);
-    cooling.cool.B03 = 1;
-    expect(applyAction(cooling, { type: "ability", id: "B03" })).toBe(cooling);
-    const full = setup([2, 4, 2, 4, 4, 2, 4, 2, 2, 4, 2, 4, 4, 2, 4, 2], ["B03"]);
+    expect(applyAction(missing, { type: "ability", id: "A009" })).toBe(missing);
+    const cooling = setup([2], ["A009"]);
+    cooling.cool.A009 = 1;
+    expect(applyAction(cooling, { type: "ability", id: "A009" })).toBe(cooling);
+    const full = setup([2, 4, 2, 4, 4, 2, 4, 2, 2, 4, 2, 4, 4, 2, 4, 2], ["A009"]);
     expect(canDuplicate(full)).toBe(false);
     expect(recoverable(full)).toBe(false);
-    expect(applyAction(full, { type: "ability", id: "B03" })).toBe(full);
-    expect(canDuplicate(setup([], ["B03"]))).toBe(false);
+    expect(applyAction(full, { type: "ability", id: "A009" })).toBe(full);
+    expect(canDuplicate(setup([], ["A009"]))).toBe(false);
   });
   it("recharges only after sixty valid moves", () => {
-    let s = setup([2], ["B03"]);
-    s.cool.B03 = 60;
+    let s = setup([2], ["A009"]);
+    s.cool.A009 = 60;
     expect(move(s)).toBe(s);
     for (let remaining = 59; remaining >= 0; remaining--) {
       s.board = setup([2, 2]).board;
       s = move(s);
-      expect(s.cool.B03).toBe(remaining);
-      if (remaining) expect(applyAction(s, { type: "ability", id: "B03" })).toBe(s);
+      expect(s.cool.A009).toBe(remaining);
+      if (remaining) expect(applyAction(s, { type: "ability", id: "A009" })).toBe(s);
     }
-    expect(applyAction(s, { type: "ability", id: "B03" }).target).toBe("B03");
+    expect(applyAction(s, { type: "ability", id: "A009" }).target).toBe("A009");
   });
 });
 describe("basic movement", () => {
@@ -190,8 +190,8 @@ describe("draft and game flow", () => {
     const s = setup([16, 16]);
     expect(move(s).phase).toBe("play");
     s.reached = [];
-    s.owned = ["G01"];
-    expect(move(s).draft).not.toContain("G01");
+    s.owned = ["A001"];
+    expect(move(s).draft).not.toContain("A001");
   });
   it("wins on 2048", () => expect(move(setup([1024, 1024])).phase).toBe("won"));
   it("replays deterministically", () => {
@@ -214,10 +214,10 @@ describe("draft and game flow", () => {
   });
 });
 describe("augments", () => {
-  it("M01 cancels spawn and respects four subsequent valid moves", () => {
-    let s = move(setup([2, 2, 4, 4], ["M01"]));
+  it("A004 cancels spawn and respects four subsequent valid moves", () => {
+    let s = move(setup([2, 2, 4, 4], ["A004"]));
     expect(s.spawned).toBe(0);
-    expect(s.cool.M01).toBe(4);
+    expect(s.cool.A004).toBe(4);
     for (let i = 0; i < 4; i++) {
       s.board = setup([2, 2, 4, 4]).board;
       s = move(s);
@@ -226,19 +226,19 @@ describe("augments", () => {
     s.board = setup([2, 2, 4, 4]).board;
     expect(move(s).spawned).toBe(4);
   });
-  it("M01 and R03 both activate but cancel only one spawn", () => {
+  it("A004 and A008 both activate but cancel only one spawn", () => {
     const s = move(
       setup(
         [2, 2, 4, 4, 8, 16, 32, 64, 128, 256, 512, 1024, 4, 8, 16, 0],
-        ["M01", "R03"],
+        ["A004", "A008"],
       ),
     );
     expect(s.spawned).toBe(0);
-    expect(s.cool).toMatchObject({ M01: 4, R03: 8 });
-    expect(s.stats).toMatchObject({ M01: 1, R03: 1 });
+    expect(s.cool).toMatchObject({ A004: 4, A008: 8 });
+    expect(s.stats).toMatchObject({ A004: 1, A008: 1 });
   });
-  it("G02 and G03 combine and preview is exact", () => {
-    const s = setup([2, 2], ["G01", "G02", "G03"]);
+  it("A002 and A003 combine and preview is exact", () => {
+    const s = setup([2, 2], ["A001", "A002", "A003"]);
     s.spawned = 4;
     const n = move(s);
     expect(n.phase).toBe("spawn");
@@ -249,8 +249,8 @@ describe("augments", () => {
     expect(p.board[n.choices[0]]).toBe(4);
     expect(p.spawned).toBe(5);
   });
-  it("M02 excludes freshly merged tiles and retains a pending removal", () => {
-    const s = setup([2, 2], ["M02"]);
+  it("A005 excludes freshly merged tiles and retains a pending removal", () => {
+    const s = setup([2, 2], ["A005"]);
     s.small = 2;
     const n = move(s);
     expect(n.pendingClean).toBe(1);
@@ -258,23 +258,23 @@ describe("augments", () => {
     n.board = setup([8, 0, 2]).board;
     const p = move(n);
     expect(p.pendingClean).toBe(0);
-    expect(p.stats.M02).toBe(1);
+    expect(p.stats.A005).toBe(1);
   });
-  it("B01 removes one tile without consuming a turn", () => {
-    const s = setup([2, 4], ["B01"]);
-    const n = applyAction(applyAction(s, { type: "ability", id: "B01" }), {
+  it("A006 removes one tile without consuming a turn", () => {
+    const s = setup([2, 4], ["A006"]);
+    const n = applyAction(applyAction(s, { type: "ability", id: "A006" }), {
       type: "target",
       index: 0,
     });
     expect(n.board[0]).toBe(0);
     expect(n.turn).toBe(0);
     expect(n.spawned).toBe(0);
-    expect(n.cool.B01).toBe(15);
-    expect(applyAction(n, { type: "ability", id: "B01" }).target).toBeNull();
+    expect(n.cool.A006).toBe(15);
+    expect(applyAction(n, { type: "ability", id: "A006" }).target).toBeNull();
   });
-  it("B02 swaps rows without merging or spawning", () => {
-    const s = setup([2, 2, 4, 4, 8, 8, 16, 16], ["B02"]);
-    const n = applyAction(applyAction(s, { type: "ability", id: "B02" }), {
+  it("A007 swaps rows without merging or spawning", () => {
+    const s = setup([2, 2, 4, 4, 8, 8, 16, 16], ["A007"]);
+    const n = applyAction(applyAction(s, { type: "ability", id: "A007" }), {
       type: "target",
       index: 0,
     });
@@ -282,19 +282,19 @@ describe("augments", () => {
     expect(n.score).toBe(0);
     expect(n.turn).toBe(0);
     expect(n.spawned).toBe(0);
-    expect(n.cool.B02).toBe(12);
+    expect(n.cool.A007).toBe(12);
   });
   it("allows recovery on a stuck board and loses without recovery", () => {
     const board = [2, 4, 2, 4, 4, 2, 4, 2, 2, 4, 2, 4, 4, 2, 4, 2];
     expect(canMove(board)).toBe(false);
-    const s = setup(board, ["B01"]);
+    const s = setup(board, ["A006"]);
     s.phase = "draft";
-    s.draft = ["G01"];
-    expect(applyAction(s, { type: "pick", id: "G01" }).phase).toBe("play");
+    s.draft = ["A001"];
+    expect(applyAction(s, { type: "pick", id: "A001" }).phase).toBe("play");
     const t = setup(board);
     t.phase = "draft";
-    t.draft = ["G01"];
-    expect(applyAction(t, { type: "pick", id: "G01" }).phase).toBe("lost");
+    t.draft = ["A001"];
+    expect(applyAction(t, { type: "pick", id: "A001" }).phase).toBe("lost");
   });
   it("does not overwrite tiles during a long run", () => {
     let s = createGame(900);
@@ -310,7 +310,7 @@ describe("augments", () => {
         if (!direction) break;
         const before = s.board.reduce((a, b) => a + b, 0);
         const n = move(s, direction);
-        if (!s.owned.includes("M02"))
+        if (!s.owned.includes("A005"))
           expect(n.board.reduce((a, b) => a + b, 0)).toBeGreaterThanOrEqual(
             before,
           );
@@ -349,7 +349,7 @@ describe("animation trajectories", () => {
 });
 
 describe("active ability cancellation", () => {
-  it.each(["B01", "B02"] as const)(
+  it.each(["A006", "A007"] as const)(
     "%s toggles off without consuming charge or a turn",
     (id) => {
       const state = setup([2, 4, 8], [id]);
@@ -367,7 +367,7 @@ describe("active ability cancellation", () => {
 
 describe("continue after victory", () => {
   it("preserves the run and does not show victory again at 4096", () => {
-    const won = move(setup([1024, 1024], ["G01", "B01"]));
+    const won = move(setup([1024, 1024], ["A001", "A006"]));
     expect(won.phase).toBe("won");
     const continued = applyAction(won, { type: "continue" });
     expect(continued.phase).toBe("play");

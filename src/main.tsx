@@ -21,6 +21,7 @@ import {
   type Id,
 } from "./engine";
 import "./style.css";
+import { AugmentHelp } from "./AugmentHelp";
 import { augmentStatus, compactAugmentStatus } from "./augmentStatus";
 const KEY = "augmented2048-v1";
 function load(): State {
@@ -352,22 +353,24 @@ function App() {
               <p className="muted">32 달성 시 첫 증강을 선택합니다.</p>
             )}
             <div className="augment-shortcuts">
-              {s.owned.map((id) =>
-                ["B01", "B02"].includes(id) ? (
+              {s.owned.map((id) => (
+                <AugmentHelp key={id} description={cards[id].description}>
+                {["B01", "B02"].includes(id) ? (
                   <button
                     key={id}
                     data-imminent={augmentStatus(s, id).imminent || undefined}
                     data-rarity={cards[id].rarity}
-                    disabled={
+                    aria-disabled={
                       !!s.cool[id] ||
                       s.phase !== "play" ||
                       (!!s.target && s.target !== id) ||
                       !!motion.length
                     }
                     aria-pressed={s.target === id}
-                    onClick={() =>
-                      dispatch({ type: "ability", id: id as "B01" | "B02" })
-                    }
+                    onClick={(e) => {
+                      if (e.currentTarget.getAttribute("aria-disabled") === "true") return;
+                      dispatch({ type: "ability", id: id as "B01" | "B02" });
+                    }}
                   >
                     <strong>{cards[id].name}</strong>
                     <span className="rarity-label">
@@ -381,7 +384,7 @@ function App() {
                     className="passive-chip"
                     data-imminent={augmentStatus(s, id).imminent || undefined}
                     data-rarity={cards[id].rarity}
-                    title={cards[id].description}
+                    tabIndex={0}
                   >
                     {cards[id].name}
                     <small className="rarity-label">
@@ -389,8 +392,9 @@ function App() {
                     </small>
                     <small className="augment-status">{compactAugmentStatus(s, id)}</small>
                   </span>
-                ),
-              )}
+                )}
+                </AugmentHelp>
+              ))}
             </div>
           </section>
           <div className="instruction" role="status">
@@ -465,7 +469,8 @@ function App() {
             </div>
           )}
           {s.owned.map((id) => (
-            <article className="owned" key={id} data-rarity={cards[id].rarity}
+            <AugmentHelp key={id} description={cards[id].description}>
+            <article tabIndex={0} className="owned" key={id} data-rarity={cards[id].rarity}
               data-imminent={augmentStatus(s, id).imminent || undefined}>
               <div className="card-label">
                 {id} · {rarities[cards[id].rarity].label}
@@ -475,13 +480,14 @@ function App() {
               <small className="augment-status">{augmentStatus(s, id).text}</small>
               {["B01", "B02"].includes(id) ? (
                 <button
-                  disabled={
+                  aria-disabled={
                     !!s.cool[id] ||
                     s.phase !== "play" ||
                     (!!s.target && s.target !== id)
                   }
                   aria-pressed={s.target === id}
-                  onClick={() => {
+                  onClick={(e) => {
+                    if (e.currentTarget.getAttribute("aria-disabled") === "true") return;
                     dispatch({ type: "ability", id: id as "B01" | "B02" });
                     boardRef.current?.scrollIntoView({
                       block: "center",
@@ -497,6 +503,7 @@ function App() {
                 </button>
               ) : null}
             </article>
+            </AugmentHelp>
           ))}
           <div className="section-title log-title">
             <h2>런 기록</h2>

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { applyAction, createGame, goals } from "./engine";
+import { applyAction, createGame, goals, nextValue } from "./engine";
 import { gameSession } from "./gameSession";
 
 describe("test game session", () => {
@@ -11,19 +11,26 @@ describe("test game session", () => {
     expect(gameSession("?latest=test").testMode).toBe(false);
     expect(gameSession("?test").storageKey).not.toBe(normal.storageKey);
   });
-  it("starts with two top-left 1024s and charged duplication and swap abilities", () => {
+  it("starts with A001–A003 ready to test the fifth spawn together", () => {
     const s = gameSession("?test").newGame();
     expect(s.board.slice(0, 4)).toEqual([1024, 1024, 0, 0]);
     expect(s.board).toHaveLength(16);
-    expect(s.owned).toEqual(["A009", "A010", "A011", "A012", "A013", "A014", "A015", "A016"]);
-    expect(s.cool).toEqual({ A009: 0, A010: 0, A011: 0, A014: 0, A015: 0, A016: 0 });
+    expect(s.owned).toEqual(["A001", "A002", "A003"]);
+    expect(s.cool).toEqual({});
+    expect(s.spawned).toBe(4);
+    expect(nextValue(s)).toBe(4);
     expect(s.reached).toEqual(goals);
     expect(s.phase).toBe("play");
-    expect(applyAction(s, { type: "ability", id: "A009" }).target).toBe("A009");
-    expect(applyAction(s, { type: "ability", id: "A010" }).target).toBe("A010");
-    // Existing high tiles must not immediately cause a stack of milestone drafts.
-    expect(applyAction(applyAction(s, { type: "ability", id: "A009" }), { type: "cancel" }).phase).toBe("play");
-    expect(applyAction(s, { type: "move", direction: "left" }).phase).toBe("won");
+    const choice = applyAction(s, { type: "move", direction: "left" });
+    expect(choice.phase).toBe("spawn");
+    expect(choice.choices).toHaveLength(2);
+    const index = choice.choices[0];
+    const placed = applyAction(choice, { type: "spawn", index });
+    expect(placed.board[index]).toBe(4);
+    expect(placed.spawned).toBe(5);
+    expect(placed.stats).toMatchObject({ A002: 1, A003: 1 });
+    expect(placed.board).toContain(2048);
+    expect(placed.phase).toBe("play");
   });
   it("restores a fresh identical fixture after play, victory or arbitrary mutations", () => {
     const session = gameSession("?test");

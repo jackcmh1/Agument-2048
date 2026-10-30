@@ -55,7 +55,7 @@ export const cards: Record<
   B03: {
     name: "타일 복제",
     rarity: "rare",
-    description: "숫자 타일을 선택한 뒤 빈칸을 선택해 복사합니다. 사용 후 30이동 충전.",
+    description: "숫자 타일을 선택한 뒤 빈칸을 선택해 복사합니다. 사용 후 60이동 충전.",
   },
   R03: {
     name: "벼랑 끝의 보상",
@@ -317,7 +317,7 @@ export function applyAction(state: State, action: Action): State {
       }
       if (s.copySource == null || !s.board[s.copySource]) return state;
       s.board[i] = s.board[s.copySource];
-      s.cool.B03 = 30;
+      s.cool.B03 = 60;
       fire(s, "B03", `타일 복제 — ${s.board[i]} 복사`);
     } else {
       const r = Math.floor(i / 4);

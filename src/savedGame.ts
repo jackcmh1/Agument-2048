@@ -35,6 +35,7 @@ export function restoreSavedGame(serialized: string | null): State | null {
     }
     return {
       continued: false, copySource: null, swapSource: null, knightSource: null,
+      undoCharges: 0, undoRecharge: 0, history: [],
       ...s, owned, draft, target, cool, stats,
     };
   } catch {

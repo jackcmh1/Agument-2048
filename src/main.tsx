@@ -13,6 +13,7 @@ import {
   canDuplicate,
   canSwapTiles,
   canGrow,
+  canUndo,
   canKnightMerge,
   knightTargets,
   type ActiveId,
@@ -262,7 +263,7 @@ function App() {
       </header>
       {session.testMode && (
         <p className="test-mode-banner" role="status">
-          테스트 모드 · 1024 두 개 / 테스트 증강 6종 · 재시작하면 초기 설정으로 돌아갑니다.
+          테스트 모드 · 1024 두 개 / 테스트 증강 7종 · 재시작하면 초기 설정으로 돌아갑니다.
         </p>
       )}
       <div className="layout">
@@ -416,6 +417,7 @@ function App() {
                       (id === "A010" && !canSwapTiles(s)) ||
                       (id === "A011" && !canGrow(s)) ||
                       (id === "A014" && !canKnightMerge(s)) ||
+                      (id === "A015" && !canUndo(s)) ||
                       s.phase !== "play" ||
                       (!!s.target && s.target !== id) ||
                       !!motion.length
@@ -522,7 +524,7 @@ function App() {
         <aside id="augment-list" tabIndex={-1}>
           <div className="section-title">
             <h2>나의 증강</h2>
-            <span>{s.owned.length} / 6</span>
+            <span>{s.owned.length}{session.testMode ? " · 테스트" : " / 6"}</span>
           </div>
           <p className="muted">선택이 쌓이면, 전략이 됩니다.</p>
           {!s.owned.length && (
@@ -553,6 +555,7 @@ function App() {
                       (id === "A010" && !canSwapTiles(s)) ||
                       (id === "A011" && !canGrow(s)) ||
                       (id === "A014" && !canKnightMerge(s)) ||
+                      (id === "A015" && !canUndo(s)) ||
                     s.phase !== "play" ||
                     (!!s.target && s.target !== id)
                   }
@@ -570,7 +573,7 @@ function App() {
                     ? "사용 취소"
                     : s.cool[id]
                       ? `${s.cool[id]} 이동 후 충전`
-                      : "능력 사용 ↗"}
+                      : id === "A015" ? "되돌리기 ↶" : "능력 사용 ↗"}
                 </button>
               ) : null}
             </article>
@@ -692,6 +695,11 @@ function App() {
             <p>
               점수 {s.score.toLocaleString()} · 최고 타일 {max} · {s.turn} 이동
             </p>
+            {canUndo(s) && (
+              <button onClick={() => dispatch({ type: "ability", id: "A015" })}>
+                한 걸음 뒤로 · {s.undoCharges}/2회
+              </button>
+            )}
             {s.phase === "won" && (
               <button onClick={() => dispatch({ type: "continue" })}>
                 이어서 하기

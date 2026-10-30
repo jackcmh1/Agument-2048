@@ -15,8 +15,8 @@ describe("test game session", () => {
     const s = gameSession("?test").newGame();
     expect(s.board.slice(0, 4)).toEqual([1024, 1024, 0, 0]);
     expect(s.board).toHaveLength(16);
-    expect(s.owned).toEqual(["A009", "A010", "A011", "A012", "A013", "A014"]);
-    expect(s.cool).toEqual({ A009: 0, A010: 0, A011: 0, A014: 0 });
+    expect(s.owned).toEqual(["A009", "A010", "A011", "A012", "A013", "A014", "A015"]);
+    expect(s.cool).toEqual({ A009: 0, A010: 0, A011: 0, A014: 0, A015: 0 });
     expect(s.reached).toEqual(goals);
     expect(s.phase).toBe("play");
     expect(applyAction(s, { type: "ability", id: "A009" }).target).toBe("A009");

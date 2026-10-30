@@ -1,5 +1,18 @@
 import { nextValue, type Id, type State } from "./engine";
 
+export function compactAugmentStatus(s: State, id: Id) {
+  if (id === "G01") return `다음 타일 ${nextValue(s)}`;
+  if (id === "G02" || id === "G03") {
+    const remaining = 5 - s.spawned % 5;
+    return remaining === 1 ? "다음 생성에 발동" : `생성 ${remaining}회 남음`;
+  }
+  if (id === "M02") return `합성 ${3 - s.small}회 · 제거 대기 ${s.pendingClean}회`;
+  if (id === "M01" || id === "R03") return `대기 ${s.cool[id] || 0}이동`;
+  if (s.target === id) return "사용 취소";
+  if (s.cool[id]) return `충전 ${s.cool[id]}이동 남음`;
+  return s.phase === "play" && !s.target ? "사용하기 ↗" : "사용 대기";
+}
+
 export function augmentStatus(s: State, id: Id) {
   const wait = s.cool[id] || 0;
   if (id === "M01" || id === "R03") {

@@ -670,8 +670,8 @@ button:not(.tile):not(.secondary):not(.draft-card):not(.text-button) {
   margin: 10px 0 0;
 }
 .augment-shortcuts {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(130px, 100%), 1fr));
   gap: 8px;
   margin-top: 8px;
 }
@@ -686,6 +686,9 @@ button:not(.tile):not(.secondary):not(.draft-card):not(.text-button) {
   padding: 9px 12px;
   border-radius: 8px;
   font-size: 12px;
+  min-width: 0;
+  min-height: 78px;
+  justify-content: center;
 }
 .augment-shortcuts > button small {
   color: #465728;

@@ -21,7 +21,7 @@ import {
   type Id,
 } from "./engine";
 import "./style.css";
-import { augmentStatus } from "./augmentStatus";
+import { augmentStatus, compactAugmentStatus } from "./augmentStatus";
 const KEY = "augmented2048-v1";
 function load(): State {
   try {
@@ -373,14 +373,7 @@ function App() {
                     <span className="rarity-label">
                       {rarities[cards[id].rarity].label} · 사용형
                     </span>
-                    <small>
-                      {s.target === id
-                        ? "사용 취소"
-                        : s.cool[id]
-                          ? `${s.cool[id]} 이동 후 충전`
-                          : "사용하기 ↗"}
-                    </small>
-                    <small className="augment-status">{augmentStatus(s, id).text}</small>
+                    <small className="augment-status">{compactAugmentStatus(s, id)}</small>
                   </button>
                 ) : (
                   <span
@@ -394,7 +387,7 @@ function App() {
                     <small className="rarity-label">
                       {rarities[cards[id].rarity].label} · 패시브
                     </small>
-                    <small className="augment-status">{augmentStatus(s, id).text}</small>
+                    <small className="augment-status">{compactAugmentStatus(s, id)}</small>
                   </span>
                 ),
               )}

@@ -833,3 +833,44 @@ button:not(.tile):not(.secondary):not(.draft-card):not(.text-button) {
   color: var(--augment-alert);
   font-weight: 700;
 }
+
+:root {
+  --ability-disabled-bg: #e7e6e3;
+  --ability-disabled-text: #62656a;
+  --ability-disabled-border: #bfc1c4;
+}
+:root[data-theme="dark"] {
+  --ability-disabled-bg: #2c3038;
+  --ability-disabled-text: #b0b5bf;
+  --ability-disabled-border: #555c68;
+}
+.augment-shortcuts > button[data-rarity]:disabled,
+.owned[data-rarity] > button:disabled {
+  background: var(--ability-disabled-bg) !important;
+  color: var(--ability-disabled-text);
+  border: 1px solid var(--ability-disabled-border);
+  opacity: 1;
+  cursor: not-allowed;
+}
+.augment-shortcuts > button[data-rarity]:disabled :is(.rarity-label, small),
+.owned[data-rarity]:has(> button:disabled) .card-label {
+  color: var(--ability-disabled-text);
+}
+.owned[data-rarity]:has(> button:disabled) {
+  background: var(--ability-disabled-bg);
+  color: var(--ability-disabled-text);
+  --card-text: var(--ability-disabled-text);
+  --augment-alert: #b52e35;
+}
+:root[data-theme="dark"] .owned[data-rarity]:has(> button:disabled) {
+  --augment-alert: #ff9299;
+}
+.owned[data-rarity]:has(> button:disabled):not([data-imminent="true"]) {
+  border-color: var(--ability-disabled-border);
+}
+.augment-shortcuts > button[data-rarity]:disabled[data-imminent="true"] {
+  border: 2px solid var(--augment-alert);
+}
+.augment-shortcuts > button[data-rarity]:disabled[data-imminent="true"] .augment-status {
+  color: var(--augment-alert);
+}

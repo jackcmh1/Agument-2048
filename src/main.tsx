@@ -11,6 +11,7 @@ import {
   applyAction,
   isActive,
   canDuplicate,
+  canSwapTiles,
   type ActiveId,
   createGame,
   cards,
@@ -31,7 +32,7 @@ function load(): State {
   try {
     const v = JSON.parse(localStorage.getItem(KEY) || "null");
     if (v?.version === 1 && v.state?.board?.length === 16)
-      return { continued: false, copySource: null, ...v.state };
+      return { continued: false, copySource: null, swapSource: null, ...v.state };
   } catch {}
   return createGame();
 }
@@ -289,9 +290,9 @@ function App() {
               <button
                 key={i}
                 data-index={i}
-                aria-pressed={s.target === "B03" ? s.copySource === i : undefined}
+                aria-pressed={s.target === "B03" ? s.copySource === i : s.target === "B04" ? s.swapSource === i : undefined}
                 aria-label={`${Math.floor(i / 4) + 1}행 ${(i % 4) + 1}열 ${v || "빈칸"}`}
-                className={`tile v${v} ${v >= 4096 ? "high-value" : ""} ${motion.some((tile) => tile.to === i) ? "motion-hidden" : ""} ${merged.includes(i) ? "merged" : ""} ${s.choices.includes(i) ? "candidate" : ""} ${s.target === "B01" && [2, 4].includes(v) ? "candidate" : ""} ${s.target === "B03" && (s.copySource == null ? v > 0 : v === 0) ? "candidate" : ""} ${s.target === "B03" && s.copySource === i ? "copy-source" : ""}`}
+                className={`tile v${v} ${v >= 4096 ? "high-value" : ""} ${motion.some((tile) => tile.to === i) ? "motion-hidden" : ""} ${merged.includes(i) ? "merged" : ""} ${s.choices.includes(i) ? "candidate" : ""} ${s.target === "B01" && [2, 4].includes(v) ? "candidate" : ""} ${s.target === "B03" && (s.copySource == null ? v > 0 : v === 0) ? "candidate" : ""} ${s.target === "B03" && s.copySource === i ? "copy-source" : ""} ${s.target === "B04" && v > 0 && (s.swapSource == null || v !== s.board[s.swapSource]) ? "candidate" : ""} ${s.target === "B04" && s.swapSource === i ? "copy-source" : ""}`}
                 onClick={(e) => {
                   if (e.detail === 0 && s.target !== "B02")
                     dispatch(
@@ -367,6 +368,7 @@ function App() {
                     aria-disabled={
                       !!s.cool[id] ||
                       (id === "B03" && !canDuplicate(s)) ||
+                      (id === "B04" && !canSwapTiles(s)) ||
                       s.phase !== "play" ||
                       (!!s.target && s.target !== id) ||
                       !!motion.length
@@ -407,6 +409,10 @@ function App() {
               ? "빛나는 빈칸 중 생성 위치를 선택하세요."
               : s.target === "B01"
                 ? "제거할 2 또는 4 타일을 선택하세요."
+                : s.target === "B04"
+                  ? s.swapSource == null
+                    ? "교환할 첫 번째 숫자 타일을 선택하세요."
+                    : "서로 다른 숫자의 두 번째 타일을 선택하세요. 선택한 타일을 다시 누르면 선택이 해제됩니다."
                 : s.target === "B03"
                   ? s.copySource == null
                     ? "복제할 숫자 타일을 선택하세요."
@@ -456,6 +462,7 @@ function App() {
               않습니다. 진행 상황은 이 브라우저에 자동 저장됩니다.
             </p>
             <p>
+              타일 교환은 서로 다른 숫자 타일 두 개를 차례로 선택합니다.
               타일 복제는 숫자 타일을 누른 뒤 빈칸을 선택합니다. 복제는 일반 생성 횟수와 이동 횟수를 소모하지 않습니다.
               차원 교환은 두 행 사이의 ↕ 버튼을 눌러 위아래 행을 바꿉니다. 충전과 재사용
               대기는 유효한 이동에서만 진행됩니다.
@@ -493,6 +500,7 @@ function App() {
                   aria-disabled={
                     !!s.cool[id] ||
                       (id === "B03" && !canDuplicate(s)) ||
+                      (id === "B04" && !canSwapTiles(s)) ||
                     s.phase !== "play" ||
                     (!!s.target && s.target !== id)
                   }

@@ -1,4 +1,4 @@
-import { nextValue, type Id, type State } from "./engine";
+import { canDuplicate, isActive, nextValue, type Id, type State } from "./engine";
 
 export function compactAugmentStatus(s: State, id: Id) {
   if (id === "G01") return `다음 타일 ${nextValue(s)}`;
@@ -10,6 +10,7 @@ export function compactAugmentStatus(s: State, id: Id) {
   if (id === "M01" || id === "R03") return `대기 ${s.cool[id] || 0}이동`;
   if (s.target === id) return "사용 취소";
   if (s.cool[id]) return `충전 ${s.cool[id]}이동 남음`;
+  if (id === "B03" && !canDuplicate(s)) return "숫자 타일·빈칸 필요";
   return s.phase === "play" && !s.target ? "사용하기 ↗" : "사용 대기";
 }
 
@@ -18,12 +19,12 @@ export function augmentStatus(s: State, id: Id) {
   if (id === "M01" || id === "R03") {
     return { imminent: wait === 1, text: `대기 ${wait}이동` };
   }
-  if (id === "B01" || id === "B02") {
+  if (isActive(id)) {
     return {
       imminent: wait === 1,
       text: wait
         ? `대기 ${wait}이동 · ${wait === 1 ? "다음 유효한 이동 후" : `${wait}회 유효한 이동 후`} 사용 가능`
-        : "사용 가능",
+        : id === "B03" && !canDuplicate(s) ? "숫자 타일과 빈칸이 필요합니다." : "사용 가능",
     };
   }
   if (id === "G02" || id === "G03") {

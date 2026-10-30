@@ -5,6 +5,8 @@ import {
   movement,
   nextValue,
   canMove,
+  canDuplicate,
+  recoverable,
   type State,
   type Id,
   type Direction,
@@ -18,6 +20,68 @@ function setup(board: number[], owned: Id[] = []): State {
 }
 const move = (s: State, d: Direction = "left") =>
   applyAction(s, { type: "move", direction: d });
+describe("tile duplication", () => {
+  const select = (s: State, index: number) => applyAction(s, { type: "target", index });
+  it("copies any selected value into an empty cell without a move or normal spawn", () => {
+    const s = setup([1024, 2], ["B03"]);
+    const armed = applyAction(s, { type: "ability", id: "B03" });
+    expect(select(armed, 2)).toBe(armed);
+    const source = select(armed, 0);
+    expect(source.copySource).toBe(0);
+    expect(source.cool.B03).toBeUndefined();
+    expect(move(source)).toBe(source);
+    const copied = select(source, 15);
+    expect(copied.board[0]).toBe(1024);
+    expect(copied.board[15]).toBe(1024);
+    expect(copied.cool.B03).toBe(30);
+    expect(copied.stats.B03).toBe(1);
+    expect(copied.target).toBeNull();
+    expect(copied.copySource).toBeNull();
+    for (const key of ["score", "turn", "spawned", "seed", "next", "small"] as const)
+      expect(copied[key]).toBe(s[key]);
+  });
+  it("changes source without overwriting occupied cells and supports cancelling either step", () => {
+    const s = setup([128, 256], ["B03"]);
+    const armed = applyAction(s, { type: "ability", id: "B03" });
+    const selected = select(select(armed, 0), 1);
+    expect(selected.board).toEqual(s.board);
+    expect(selected.copySource).toBe(1);
+    expect(select(selected, 2).board[2]).toBe(256);
+    for (const state of [armed, selected]) {
+      const cancelled = applyAction(state, { type: "cancel" });
+      expect(cancelled.board).toEqual(s.board);
+      expect(cancelled.target).toBeNull();
+      expect(cancelled.copySource).toBeNull();
+      expect(cancelled.cool.B03).toBeUndefined();
+      expect(applyAction(state, { type: "ability", id: "B03" }).target).toBeNull();
+    }
+    for (const index of [-1, 16, 0.5]) expect(select(selected, index)).toBe(selected);
+  });
+  it("requires an owned ready ability, a number and an empty cell", () => {
+    const missing = setup([2]);
+    expect(applyAction(missing, { type: "ability", id: "B03" })).toBe(missing);
+    const cooling = setup([2], ["B03"]);
+    cooling.cool.B03 = 1;
+    expect(applyAction(cooling, { type: "ability", id: "B03" })).toBe(cooling);
+    const full = setup([2, 4, 2, 4, 4, 2, 4, 2, 2, 4, 2, 4, 4, 2, 4, 2], ["B03"]);
+    expect(canDuplicate(full)).toBe(false);
+    expect(recoverable(full)).toBe(false);
+    expect(applyAction(full, { type: "ability", id: "B03" })).toBe(full);
+    expect(canDuplicate(setup([], ["B03"]))).toBe(false);
+  });
+  it("recharges only after thirty valid moves", () => {
+    let s = setup([2], ["B03"]);
+    s.cool.B03 = 30;
+    expect(move(s)).toBe(s);
+    for (let remaining = 29; remaining >= 0; remaining--) {
+      s.board = setup([2, 2]).board;
+      s = move(s);
+      expect(s.cool.B03).toBe(remaining);
+      if (remaining) expect(applyAction(s, { type: "ability", id: "B03" })).toBe(s);
+    }
+    expect(applyAction(s, { type: "ability", id: "B03" }).target).toBe("B03");
+  });
+});
 describe("basic movement", () => {
   it.each([
     [

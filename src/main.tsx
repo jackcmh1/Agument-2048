@@ -9,6 +9,9 @@ import React, {
 import { createRoot } from "react-dom/client";
 import {
   applyAction,
+  isActive,
+  canDuplicate,
+  type ActiveId,
   createGame,
   cards,
   rarities,
@@ -28,7 +31,7 @@ function load(): State {
   try {
     const v = JSON.parse(localStorage.getItem(KEY) || "null");
     if (v?.version === 1 && v.state?.board?.length === 16)
-      return { continued: false, ...v.state };
+      return { continued: false, copySource: null, ...v.state };
   } catch {}
   return createGame();
 }
@@ -286,8 +289,9 @@ function App() {
               <button
                 key={i}
                 data-index={i}
+                aria-pressed={s.target === "B03" ? s.copySource === i : undefined}
                 aria-label={`${Math.floor(i / 4) + 1}행 ${(i % 4) + 1}열 ${v || "빈칸"}`}
-                className={`tile v${v} ${v >= 4096 ? "high-value" : ""} ${motion.some((tile) => tile.to === i) ? "motion-hidden" : ""} ${merged.includes(i) ? "merged" : ""} ${s.choices.includes(i) ? "candidate" : ""} ${s.target === "B01" && [2, 4].includes(v) ? "candidate" : ""}`}
+                className={`tile v${v} ${v >= 4096 ? "high-value" : ""} ${motion.some((tile) => tile.to === i) ? "motion-hidden" : ""} ${merged.includes(i) ? "merged" : ""} ${s.choices.includes(i) ? "candidate" : ""} ${s.target === "B01" && [2, 4].includes(v) ? "candidate" : ""} ${s.target === "B03" && (s.copySource == null ? v > 0 : v === 0) ? "candidate" : ""} ${s.target === "B03" && s.copySource === i ? "copy-source" : ""}`}
                 onClick={(e) => {
                   if (e.detail === 0 && s.target !== "B02")
                     dispatch(
@@ -297,7 +301,7 @@ function App() {
                     );
                 }}
               >
-                {v || (s.choices.includes(i) ? `+${nextValue(s)}` : "")}
+                {v || (s.choices.includes(i) ? `+${nextValue(s)}` : s.target === "B03" && s.copySource != null ? `+${s.board[s.copySource]}` : "")}
               </button>
             ))}
             {s.target === "B02" && (
@@ -355,13 +359,14 @@ function App() {
             <div className="augment-shortcuts">
               {s.owned.map((id) => (
                 <AugmentHelp key={id} description={cards[id].description}>
-                {["B01", "B02"].includes(id) ? (
+                {isActive(id) ? (
                   <button
                     key={id}
                     data-imminent={augmentStatus(s, id).imminent || undefined}
                     data-rarity={cards[id].rarity}
                     aria-disabled={
                       !!s.cool[id] ||
+                      (id === "B03" && !canDuplicate(s)) ||
                       s.phase !== "play" ||
                       (!!s.target && s.target !== id) ||
                       !!motion.length
@@ -369,7 +374,7 @@ function App() {
                     aria-pressed={s.target === id}
                     onClick={(e) => {
                       if (e.currentTarget.getAttribute("aria-disabled") === "true") return;
-                      dispatch({ type: "ability", id: id as "B01" | "B02" });
+                      dispatch({ type: "ability", id: id as ActiveId });
                     }}
                   >
                     <strong>{cards[id].name}</strong>
@@ -402,6 +407,10 @@ function App() {
               ? "빛나는 빈칸 중 생성 위치를 선택하세요."
               : s.target === "B01"
                 ? "제거할 2 또는 4 타일을 선택하세요."
+                : s.target === "B03"
+                  ? s.copySource == null
+                    ? "복제할 숫자 타일을 선택하세요."
+                    : `${s.board[s.copySource]}을 복사할 빈칸을 선택하세요. 다른 숫자를 누르면 복제 대상이 바뀝니다.`
                 : s.target === "B02"
                   ? "교환할 두 행 사이의 ↕ 버튼을 누르세요."
                   : "방향키 / WASD · 모바일에서는 스와이프"}
@@ -447,6 +456,7 @@ function App() {
               않습니다. 진행 상황은 이 브라우저에 자동 저장됩니다.
             </p>
             <p>
+              타일 복제는 숫자 타일을 누른 뒤 빈칸을 선택합니다. 복제는 일반 생성 횟수와 이동 횟수를 소모하지 않습니다.
               차원 교환은 두 행 사이의 ↕ 버튼을 눌러 위아래 행을 바꿉니다. 충전과 재사용
               대기는 유효한 이동에서만 진행됩니다.
             </p>
@@ -478,17 +488,18 @@ function App() {
               <h3>{cards[id].name}</h3>
               <p>{cards[id].description}</p>
               <small className="augment-status">{augmentStatus(s, id).text}</small>
-              {["B01", "B02"].includes(id) ? (
+              {isActive(id) ? (
                 <button
                   aria-disabled={
                     !!s.cool[id] ||
+                      (id === "B03" && !canDuplicate(s)) ||
                     s.phase !== "play" ||
                     (!!s.target && s.target !== id)
                   }
                   aria-pressed={s.target === id}
                   onClick={(e) => {
                     if (e.currentTarget.getAttribute("aria-disabled") === "true") return;
-                    dispatch({ type: "ability", id: id as "B01" | "B02" });
+                    dispatch({ type: "ability", id: id as ActiveId });
                     boardRef.current?.scrollIntoView({
                       block: "center",
                       behavior: "instant",
@@ -547,7 +558,7 @@ function App() {
           {(Object.keys(cards) as Id[]).map((id) => (
             <article className="owned" key={id} data-rarity={cards[id].rarity}>
               <div className="card-label">
-                {id} · {rarities[cards[id].rarity].label} · {["B01", "B02"].includes(id) ? "사용형" : "패시브"}
+                {id} · {rarities[cards[id].rarity].label} · {isActive(id) ? "사용형" : "패시브"}
               </div>
               <h3>{cards[id].name}</h3>
               <p>{cards[id].description}</p>

@@ -33,7 +33,7 @@ describe("tile duplication", () => {
     const copied = select(source, 15);
     expect(copied.board[0]).toBe(1024);
     expect(copied.board[15]).toBe(1024);
-    expect(copied.cool.B03).toBe(30);
+    expect(copied.cool.B03).toBe(60);
     expect(copied.stats.B03).toBe(1);
     expect(copied.target).toBeNull();
     expect(copied.copySource).toBeNull();
@@ -69,11 +69,11 @@ describe("tile duplication", () => {
     expect(applyAction(full, { type: "ability", id: "B03" })).toBe(full);
     expect(canDuplicate(setup([], ["B03"]))).toBe(false);
   });
-  it("recharges only after thirty valid moves", () => {
+  it("recharges only after sixty valid moves", () => {
     let s = setup([2], ["B03"]);
-    s.cool.B03 = 30;
+    s.cool.B03 = 60;
     expect(move(s)).toBe(s);
-    for (let remaining = 29; remaining >= 0; remaining--) {
+    for (let remaining = 59; remaining >= 0; remaining--) {
       s.board = setup([2, 2]).board;
       s = move(s);
       expect(s.cool.B03).toBe(remaining);

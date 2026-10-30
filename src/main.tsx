@@ -13,7 +13,6 @@ import {
   canDuplicate,
   canSwapTiles,
   type ActiveId,
-  createGame,
   cards,
   rarities,
   goals,
@@ -27,21 +26,23 @@ import {
 import "./style.css";
 import { AugmentHelp } from "./AugmentHelp";
 import { MoveBuffer } from "./moveBuffer";
+import { gameSession } from "./gameSession";
 import { augmentStatus, compactAugmentStatus } from "./augmentStatus";
-const KEY = "augmented2048-v1";
+const session = gameSession(window.location.search);
+const KEY = session.storageKey;
 function load(): State {
   try {
     const v = JSON.parse(localStorage.getItem(KEY) || "null");
     if (v?.version === 1 && v.state?.board?.length === 16)
       return { continued: false, copySource: null, swapSource: null, ...v.state };
   } catch {}
-  return createGame();
+  return session.newGame();
 }
 function App() {
   const codexRef = useRef<HTMLDialogElement>(null);
   const [s, rawDispatch] = useReducer(
     (s: State, a: Action | { type: "reset"; seed?: number }) =>
-      a.type === "reset" ? createGame(a.seed) : applyAction(s, a),
+      a.type === "reset" ? session.newGame(a.seed) : applyAction(s, a),
     undefined,
     load,
   );
@@ -204,7 +205,7 @@ function App() {
   const max = Math.max(...s.board),
     goal = goals.find((g) => !s.reached.includes(g));
   function reset() {
-    if (window.confirm("현재 게임을 종료하고 새로 시작할까요?"))
+    if (window.confirm(session.testMode ? "테스트 초기 설정으로 돌아갈까요?" : "현재 게임을 종료하고 새로 시작할까요?"))
       dispatch({ type: "reset" });
   }
   function download() {
@@ -241,7 +242,7 @@ function App() {
             {theme === "light" ? "☾ 다크 모드" : "☀ 일반 모드"}
           </button>
           <button className="secondary" onClick={reset}>
-            새 게임 ↗
+            {session.testMode ? "테스트 재시작 ↗" : "새 게임 ↗"}
           </button>
           <button className="secondary" onClick={() => {
             moveBuffer.current.clear();
@@ -251,6 +252,11 @@ function App() {
           </button>
         </div>
       </header>
+      {session.testMode && (
+        <p className="test-mode-banner" role="status">
+          테스트 모드 · 1024 두 개 / 타일 복제·타일 교환 · 재시작하면 초기 설정으로 돌아갑니다.
+        </p>
+      )}
       <div className="layout">
         <section className="play-area">
           <div className="hud">
@@ -664,7 +670,7 @@ function App() {
               className="secondary"
               onClick={() => dispatch({ type: "reset" })}
             >
-              새로운 런 시작
+              {session.testMode ? "테스트 재시작" : "새로운 런 시작"}
             </button>
             <button className="secondary" onClick={download}>
               런 기록 저장

@@ -383,7 +383,8 @@ export function applyAction(state: State, action: Action): State {
     const previous = s.history.pop()!;
     const uses = s.stats.A015 || 0;
     const restored: State = { ...previous, history: s.history,
-      undoCharges: s.undoCharges - 1, undoRecharge: s.undoRecharge || 50 };
+      undoCharges: s.undoCharges - 1, undoRecharge: s.undoRecharge || 50,
+      continued: s.continued || previous.continued };
     restored.stats.A015 = uses;
     fire(restored, "A015", "한 걸음 뒤로 — 직전 이동 복원");
     finish(restored);

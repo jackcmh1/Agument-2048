@@ -1,7 +1,7 @@
-export type ActiveId = "B01" | "B02" | "B03" | "B04";
-export type Id = "G01" | "G02" | "G03" | "M01" | "M02" | ActiveId | "R03";
+export type ActiveId = "B01" | "B02" | "B03" | "B04" | "B05";
+export type Id = "G01" | "G02" | "G03" | "G04" | "G05" | "M01" | "M02" | ActiveId | "R03";
 export function isActive(id: Id): id is ActiveId {
-  return id === "B01" || id === "B02" || id === "B03" || id === "B04";
+  return id === "B01" || id === "B02" || id === "B03" || id === "B04" || id === "B05";
 }
 export const rarities = {
   common: { label: "일반" },
@@ -29,6 +29,16 @@ export const cards: Record<
     name: "고급 생산 라인",
     rarity: "common",
     description: "매 5번째 생성 숫자가 반드시 4가 됩니다.",
+  },
+  G04: {
+    name: "작은 수의 법칙",
+    rarity: "common",
+    description: "일반 생성 숫자가 항상 2가 됩니다. 고급 생산 라인의 매 5번째 4 생성은 유지됩니다.",
+  },
+  G05: {
+    name: "쌍둥이 탄생",
+    rarity: "uncommon",
+    description: "매 16번째 일반 생성에서 같은 숫자를 하나 더 생성합니다. 빈칸이 부족하면 하나만 생성합니다.",
   },
   M01: {
     name: "연쇄 반응",
@@ -61,6 +71,11 @@ export const cards: Record<
     name: "타일 교환",
     rarity: "uncommon",
     description: "서로 다른 숫자 타일 두 개를 선택해 위치를 바꿉니다. 사용 후 40이동 충전.",
+  },
+  B05: {
+    name: "성장 촉진",
+    rarity: "uncommon",
+    description: "선택한 2·4·8 타일 하나를 두 배로 키웁니다. 사용 후 25이동 충전.",
   },
   R03: {
     name: "벼랑 끝의 보상",
@@ -116,7 +131,7 @@ function fire(s: State, id: Id, t: string) {
   note(s, t);
 }
 export function nextValue(s: State) {
-  return s.owned.includes("G03") && (s.spawned + 1) % 5 === 0 ? 4 : s.next;
+  return s.owned.includes("G03") && (s.spawned + 1) % 5 === 0 ? 4 : s.owned.includes("G04") ? 2 : s.next;
 }
 export function movement(board: number[], direction: Direction) {
   const out = [...board],
@@ -191,7 +206,8 @@ export function recoverable(s: State) {
           .some((v, i) => v !== s.board[(r + 1) * 4 + i]),
       )) ||
     (s.owned.includes("B03") && !s.cool.B03 && canDuplicate(s)) ||
-    (s.owned.includes("B04") && !s.cool.B04 && canSwapTiles(s))
+    (s.owned.includes("B04") && !s.cool.B04 && canSwapTiles(s)) ||
+    (s.owned.includes("B05") && !s.cool.B05 && canGrow(s))
   );
 }
 export function canDuplicate(s: State) {
@@ -199,6 +215,9 @@ export function canDuplicate(s: State) {
 }
 export function canSwapTiles(s: State) {
   return new Set(s.board.filter((v) => v > 0)).size >= 2;
+}
+export function canGrow(s: State) {
+  return s.board.some((v) => [2, 4, 8].includes(v));
 }
 function finish(s: State) {
   if (!s.continued && s.board.some((v) => v >= 2048)) {
@@ -230,8 +249,16 @@ function finish(s: State) {
 function spawn(s: State, index: number) {
   if (s.owned.includes("G03") && (s.spawned + 1) % 5 === 0)
     fire(s, "G03", "고급 생산 라인 — 4 생성");
-  s.board[index] = nextValue(s);
+  const value = nextValue(s);
+  s.board[index] = value;
   s.spawned++;
+  if (s.owned.includes("G05") && s.spawned % 16 === 0) {
+    const spaces = empty(s.board);
+    if (spaces.length) {
+      s.board[sample(s, spaces)] = value;
+      fire(s, "G05", `쌍둥이 탄생 — ${value} 추가 생성`);
+    } else note(s, "쌍둥이 탄생 — 빈칸 부족으로 하나만 생성");
+  }
   s.next = random(s) < 0.9 ? 2 : 4;
   s.choices = [];
   finish(s);
@@ -311,6 +338,7 @@ export function applyAction(state: State, action: Action): State {
   ) {
     if (action.id === "B03" && !canDuplicate(s)) return state;
     if (action.id === "B04" && !canSwapTiles(s)) return state;
+    if (action.id === "B05" && !canGrow(s)) return state;
     s.target = s.target === action.id ? null : action.id;
     s.copySource = null;
     s.swapSource = null;
@@ -324,6 +352,11 @@ export function applyAction(state: State, action: Action): State {
       s.board[i] = 0;
       s.cool.B01 = 15;
       fire(s, "B01", "긴급 정리 — 타일 제거");
+    } else if (s.target === "B05") {
+      if (![2, 4, 8].includes(s.board[i])) return state;
+      s.board[i] *= 2;
+      s.cool.B05 = 25;
+      fire(s, "B05", `성장 촉진 — ${s.board[i]}로 성장`);
     } else if (s.target === "B04") {
       if (!s.board[i]) return state;
       if (s.swapSource == null) {

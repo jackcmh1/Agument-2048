@@ -1,4 +1,8 @@
-export type Id = "G01" | "G02" | "G03" | "M01" | "M02" | "B01" | "B02" | "R03";
+export type ActiveId = "B01" | "B02" | "B03";
+export type Id = "G01" | "G02" | "G03" | "M01" | "M02" | ActiveId | "R03";
+export function isActive(id: Id): id is ActiveId {
+  return id === "B01" || id === "B02" || id === "B03";
+}
 export const rarities = {
   common: { label: "일반" },
   uncommon: { label: "고급" },
@@ -48,6 +52,11 @@ export const cards: Record<
     rarity: "rare",
     description: "인접한 두 행을 교환합니다. 사용 후 12이동 충전.",
   },
+  B03: {
+    name: "타일 복제",
+    rarity: "rare",
+    description: "숫자 타일을 선택한 뒤 빈칸을 선택해 복사합니다. 사용 후 30이동 충전.",
+  },
   R03: {
     name: "벼랑 끝의 보상",
     rarity: "rare",
@@ -72,7 +81,8 @@ export type State = {
   draft: Id[];
   choices: number[];
   phase: "play" | "draft" | "spawn" | "won" | "lost";
-  target: "B01" | "B02" | null;
+  target: ActiveId | null;
+  copySource: number | null;
   log: string[];
   stats: Record<string, number>;
 };
@@ -80,7 +90,7 @@ export type Action =
   | { type: "move"; direction: Direction }
   | { type: "pick"; id: Id }
   | { type: "spawn"; index: number }
-  | { type: "ability"; id: "B01" | "B02" }
+  | { type: "ability"; id: ActiveId }
   | { type: "target"; index: number }
   | { type: "cancel" }
   | { type: "continue" };
@@ -173,8 +183,12 @@ export function recoverable(s: State) {
         s.board
           .slice(r * 4, r * 4 + 4)
           .some((v, i) => v !== s.board[(r + 1) * 4 + i]),
-      ))
+      )) ||
+    (s.owned.includes("B03") && !s.cool.B03 && canDuplicate(s))
   );
+}
+export function canDuplicate(s: State) {
+  return s.board.includes(0) && s.board.some((v) => v > 0);
 }
 function finish(s: State) {
   if (!s.continued && s.board.some((v) => v >= 2048)) {
@@ -231,6 +245,7 @@ export function createGame(seed = Date.now() >>> 0): State {
     choices: [],
     phase: "play",
     target: null,
+    copySource: null,
     log: ["새로운 빌드를 시작하세요."],
     stats: {},
   };
@@ -252,6 +267,7 @@ export function applyAction(state: State, action: Action): State {
   }
   if (action.type === "cancel") {
     s.target = null;
+    s.copySource = null;
     return s;
   }
   if (
@@ -281,7 +297,9 @@ export function applyAction(state: State, action: Action): State {
     s.owned.includes(action.id) &&
     !s.cool[action.id]
   ) {
+    if (action.id === "B03" && !canDuplicate(s)) return state;
     s.target = s.target === action.id ? null : action.id;
+    s.copySource = null;
     return s;
   }
   if (action.type === "target" && s.target) {
@@ -292,6 +310,15 @@ export function applyAction(state: State, action: Action): State {
       s.board[i] = 0;
       s.cool.B01 = 15;
       fire(s, "B01", "긴급 정리 — 타일 제거");
+    } else if (s.target === "B03") {
+      if (s.board[i] > 0) {
+        s.copySource = i;
+        return s;
+      }
+      if (s.copySource == null || !s.board[s.copySource]) return state;
+      s.board[i] = s.board[s.copySource];
+      s.cool.B03 = 30;
+      fire(s, "B03", `타일 복제 — ${s.board[i]} 복사`);
     } else {
       const r = Math.floor(i / 4);
       if (r >= 3) return state;
@@ -304,6 +331,7 @@ export function applyAction(state: State, action: Action): State {
       fire(s, "B02", `${r + 1}·${r + 2}행 교환`);
     }
     s.target = null;
+    s.copySource = null;
     finish(s);
     return s;
   }

@@ -753,11 +753,6 @@ button:not(.tile):not(.secondary):not(.draft-card):not(.text-button) {
 [data-rarity="rare"].draft-card strong {
   color: var(--rarity-color);
 }
-[data-rarity="uncommon"].draft-card:hover,
-[data-rarity="rare"].draft-card:hover {
-  border-color: var(--rarity-border);
-  background: color-mix(in srgb, var(--rarity-fill) 15%, var(--draft));
-}
 .augment-shortcuts > button[data-rarity="uncommon"],
 .augment-shortcuts > button[data-rarity="rare"],
 .owned[data-rarity="uncommon"] button,
@@ -773,6 +768,34 @@ button:not(.tile):not(.secondary):not(.draft-card):not(.text-button) {
 }
 .rarity-label {
   font-size: 10px;
+}
+
+/* Use the shortcut buttons' filled palette across every augment card. */
+[data-rarity="common"] {
+  --rarity-fill: #dcf58a;
+  --rarity-border: #9bb653;
+  --rarity-ink: #465728;
+}
+[data-rarity="uncommon"] { --rarity-ink: #216d98; }
+[data-rarity="rare"] { --rarity-ink: #87640b; }
+:is(.owned, .draft-card, .passive-chip)[data-rarity] {
+  background: var(--rarity-fill);
+  border-color: var(--rarity-border);
+  color: #29303a;
+  --rarity-color: var(--rarity-ink);
+  --card-label: var(--rarity-ink);
+  --card-text: #414b55;
+  --draft-description: #414b55;
+  --augment-alert: #b52e35;
+}
+:is(.owned, .draft-card, .passive-chip)[data-rarity] :is(.card-label, .rarity-label),
+.draft-card[data-rarity] strong {
+  color: var(--rarity-ink);
+}
+.draft-card[data-rarity]:hover {
+  background: var(--rarity-fill);
+  border-color: var(--rarity-ink);
+  box-shadow: inset 0 0 0 1px var(--rarity-ink);
 }
 
 :root { --augment-alert: #b52e35; }

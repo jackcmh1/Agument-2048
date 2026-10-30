@@ -1,7 +1,7 @@
-export type ActiveId = "A006" | "A007" | "A009" | "A010" | "A011" | "A014" | "A015";
+export type ActiveId = "A006" | "A007" | "A009" | "A010" | "A011" | "A014" | "A015" | "A016";
 export type Id = "A001" | "A002" | "A003" | "A012" | "A013" | "A004" | "A005" | ActiveId | "A008";
 export function isActive(id: Id): id is ActiveId {
-  return id === "A006" || id === "A007" || id === "A009" || id === "A010" || id === "A011" || id === "A014" || id === "A015";
+  return id === "A006" || id === "A007" || id === "A009" || id === "A010" || id === "A011" || id === "A014" || id === "A015" || id === "A016";
 }
 export const rarities = {
   common: { label: "일반" },
@@ -87,6 +87,11 @@ export const cards: Record<
     rarity: "rare",
     description: "직전 이동을 되돌립니다. 최대 2회 저장하며 획득 시 2회 충전됩니다. 50이동마다 1회 재충전. 다른 능력을 사용하거나 증강을 획득하면 이전 이동 기록은 초기화됩니다.",
   },
+  A016: {
+    name: "전면 성장",
+    rarity: "rare",
+    description: "일회용. 모든 숫자 타일을 두 배로 키운 뒤 다음 일반 생성을 진행합니다. 빈칸이 없으면 생성은 생략합니다. 점수는 추가되지 않습니다.",
+  },
   A008: {
     name: "벼랑 끝의 보상",
     rarity: "rare",
@@ -125,6 +130,9 @@ export type MoveSnapshot = Omit<State, "history" | "undoCharges" | "undoRecharge
 export function canUndo(s: State) {
   return s.owned.includes("A015") && s.undoCharges > 0 && s.history.length > 0 &&
     !s.target && ["play", "won", "lost"].includes(s.phase);
+}
+export function canGlobalGrowth(s: State) {
+  return s.owned.includes("A016") && !s.stats.A016 && s.board.some((v) => v > 0);
 }
 export type Action =
   | { type: "move"; direction: Direction }
@@ -227,7 +235,7 @@ export function recoverable(s: State) {
     (s.owned.includes("A009") && !s.cool.A009 && canDuplicate(s)) ||
     (s.owned.includes("A010") && !s.cool.A010 && canSwapTiles(s)) ||
     (s.owned.includes("A011") && !s.cool.A011 && canGrow(s)) ||
-    (s.owned.includes("A014") && !s.cool.A014 && canKnightMerge(s))
+    (s.owned.includes("A014") && !s.cool.A014 && canKnightMerge(s)) || canGlobalGrowth(s)
   );
 }
 export function canDuplicate(s: State) {
@@ -311,6 +319,27 @@ function spawn(s: State, index: number) {
   s.next = random(s) < 0.9 ? 2 : 4;
   s.choices = [];
   finish(s);
+}
+function spawnNext(s: State): State {
+  const spaces = empty(s.board);
+  if (
+    s.owned.includes("A002") &&
+    (s.spawned + 1) % 5 === 0 &&
+    spaces.length > 1
+  ) {
+    const a = sample(s, spaces),
+      b = sample(
+        s,
+        spaces.filter((i) => i !== a),
+      );
+    s.choices = [a, b];
+    s.phase = "spawn";
+    fire(s, "A002", "생성 위치를 선택하세요");
+    return s;
+  }
+  if (spaces.length) spawn(s, sample(s, spaces));
+  else finish(s);
+  return s;
 }
 export function createGame(seed = Date.now() >>> 0): State {
   const s: State = {
@@ -406,6 +435,13 @@ export function applyAction(state: State, action: Action): State {
     s.owned.includes(action.id) &&
     !s.cool[action.id]
   ) {
+    if (action.id === "A016") {
+      if (!canGlobalGrowth(s) || s.target) return state;
+      s.board = s.board.map((value) => value * 2);
+      s.history = [];
+      fire(s, "A016", "전면 성장 — 모든 타일 두 배, 일회용 소모");
+      return spawnNext(s);
+    }
     if (action.id === "A009" && !canDuplicate(s)) return state;
     if (action.id === "A010" && !canSwapTiles(s)) return state;
     if (action.id === "A011" && !canGrow(s)) return state;
@@ -534,23 +570,5 @@ export function applyAction(state: State, action: Action): State {
     finish(s);
     return s;
   }
-  const spaces = empty(s.board);
-  if (
-    s.owned.includes("A002") &&
-    (s.spawned + 1) % 5 === 0 &&
-    spaces.length > 1
-  ) {
-    const a = sample(s, spaces),
-      b = sample(
-        s,
-        spaces.filter((i) => i !== a),
-      );
-    s.choices = [a, b];
-    s.phase = "spawn";
-    fire(s, "A002", "생성 위치를 선택하세요");
-    return s;
-  }
-  if (spaces.length) spawn(s, sample(s, spaces));
-  else finish(s);
-  return s;
+  return spawnNext(s);
 }

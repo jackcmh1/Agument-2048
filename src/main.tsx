@@ -14,6 +14,7 @@ import {
   canSwapTiles,
   canGrow,
   canUndo,
+  canGlobalGrowth,
   canKnightMerge,
   knightTargets,
   type ActiveId,
@@ -263,7 +264,7 @@ function App() {
       </header>
       {session.testMode && (
         <p className="test-mode-banner" role="status">
-          테스트 모드 · 1024 두 개 / 테스트 증강 7종 · 재시작하면 초기 설정으로 돌아갑니다.
+          테스트 모드 · 1024 두 개 / 테스트 증강 8종 · 재시작하면 초기 설정으로 돌아갑니다.
         </p>
       )}
       <div className="layout">
@@ -418,6 +419,7 @@ function App() {
                       (id === "A011" && !canGrow(s)) ||
                       (id === "A014" && !canKnightMerge(s)) ||
                       (id === "A015" && !canUndo(s)) ||
+                      (id === "A016" && !canGlobalGrowth(s)) ||
                       s.phase !== "play" ||
                       (!!s.target && s.target !== id) ||
                       !!motion.length
@@ -430,7 +432,7 @@ function App() {
                   >
                     <strong>{cards[id].name}</strong>
                     <span className="rarity-label">
-                      {rarities[cards[id].rarity].label} · 사용형
+                      {rarities[cards[id].rarity].label} · {id === "A016" ? "일회용" : "사용형"}
                     </span>
                     <small className="augment-status">{compactAugmentStatus(s, id)}</small>
                   </button>
@@ -556,6 +558,7 @@ function App() {
                       (id === "A011" && !canGrow(s)) ||
                       (id === "A014" && !canKnightMerge(s)) ||
                       (id === "A015" && !canUndo(s)) ||
+                      (id === "A016" && !canGlobalGrowth(s)) ||
                     s.phase !== "play" ||
                     (!!s.target && s.target !== id)
                   }
@@ -573,7 +576,7 @@ function App() {
                     ? "사용 취소"
                     : s.cool[id]
                       ? `${s.cool[id]} 이동 후 충전`
-                      : id === "A015" ? "되돌리기 ↶" : "능력 사용 ↗"}
+                      : id === "A016" ? s.stats.A016 ? "소모됨" : "한 번 사용 ↗" : id === "A015" ? "되돌리기 ↶" : "능력 사용 ↗"}
                 </button>
               ) : null}
             </article>
@@ -636,7 +639,7 @@ function App() {
           {codexIds.map((id) => (
             <article className="owned" key={id} data-rarity={cards[id].rarity}>
               <div className="card-label">
-                {id} · {rarities[cards[id].rarity].label} · {isActive(id) ? "사용형" : "패시브"}
+                {id} · {rarities[cards[id].rarity].label} · {id === "A016" ? "일회용" : isActive(id) ? "사용형" : "패시브"}
               </div>
               <h3>{cards[id].name}</h3>
               <p>{cards[id].description}</p>

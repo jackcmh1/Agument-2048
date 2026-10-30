@@ -12,6 +12,7 @@ import {
   isActive,
   canDuplicate,
   canSwapTiles,
+  canGrow,
   type ActiveId,
   cards,
   rarities,
@@ -259,7 +260,7 @@ function App() {
       </header>
       {session.testMode && (
         <p className="test-mode-banner" role="status">
-          테스트 모드 · 1024 두 개 / 타일 복제·타일 교환 · 재시작하면 초기 설정으로 돌아갑니다.
+          테스트 모드 · 1024 두 개 / 테스트 증강 5종 · 재시작하면 초기 설정으로 돌아갑니다.
         </p>
       )}
       <div className="layout">
@@ -334,7 +335,7 @@ function App() {
                 data-index={i}
                 aria-pressed={s.target === "B03" ? s.copySource === i : s.target === "B04" ? s.swapSource === i : undefined}
                 aria-label={`${Math.floor(i / 4) + 1}행 ${(i % 4) + 1}열 ${v || "빈칸"}`}
-                className={`tile v${v} ${v >= 4096 ? "high-value" : ""} ${motion.some((tile) => tile.to === i) ? "motion-hidden" : ""} ${merged.includes(i) ? "merged" : ""} ${s.choices.includes(i) ? "candidate" : ""} ${s.target === "B01" && [2, 4].includes(v) ? "candidate" : ""} ${s.target === "B03" && (s.copySource == null ? v > 0 : v === 0) ? "candidate" : ""} ${s.target === "B03" && s.copySource === i ? "copy-source" : ""} ${s.target === "B04" && v > 0 && (s.swapSource == null || v !== s.board[s.swapSource]) ? "candidate" : ""} ${s.target === "B04" && s.swapSource === i ? "copy-source" : ""}`}
+                className={`tile v${v} ${v >= 4096 ? "high-value" : ""} ${motion.some((tile) => tile.to === i) ? "motion-hidden" : ""} ${merged.includes(i) ? "merged" : ""} ${s.choices.includes(i) ? "candidate" : ""} ${s.target === "B01" && [2, 4].includes(v) ? "candidate" : ""} ${s.target === "B05" && [2, 4, 8].includes(v) ? "candidate" : ""} ${s.target === "B03" && (s.copySource == null ? v > 0 : v === 0) ? "candidate" : ""} ${s.target === "B03" && s.copySource === i ? "copy-source" : ""} ${s.target === "B04" && v > 0 && (s.swapSource == null || v !== s.board[s.swapSource]) ? "candidate" : ""} ${s.target === "B04" && s.swapSource === i ? "copy-source" : ""}`}
                 onClick={(e) => {
                   if (e.detail === 0 && s.target !== "B02")
                     dispatch(
@@ -411,6 +412,7 @@ function App() {
                       !!s.cool[id] ||
                       (id === "B03" && !canDuplicate(s)) ||
                       (id === "B04" && !canSwapTiles(s)) ||
+                      (id === "B05" && !canGrow(s)) ||
                       s.phase !== "play" ||
                       (!!s.target && s.target !== id) ||
                       !!motion.length
@@ -451,6 +453,8 @@ function App() {
               ? "빛나는 빈칸 중 생성 위치를 선택하세요."
               : s.target === "B01"
                 ? "제거할 2 또는 4 타일을 선택하세요."
+                : s.target === "B05"
+                  ? "성장시킬 2·4·8 타일을 선택하세요."
                 : s.target === "B04"
                   ? s.swapSource == null
                     ? "교환할 첫 번째 숫자 타일을 선택하세요."
@@ -543,6 +547,7 @@ function App() {
                     !!s.cool[id] ||
                       (id === "B03" && !canDuplicate(s)) ||
                       (id === "B04" && !canSwapTiles(s)) ||
+                      (id === "B05" && !canGrow(s)) ||
                     s.phase !== "play" ||
                     (!!s.target && s.target !== id)
                   }

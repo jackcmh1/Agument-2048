@@ -3,9 +3,9 @@ import { applyAction, cards, createGame, goals } from "./engine";
 import { legacyIds, restoreSavedGame } from "./savedGame";
 
 describe("unified augment ID migration", () => {
-  it("preserves the agreed fourteen IDs independently of rarity and object order", () => {
+  it("preserves the agreed original IDs independently of rarity and object order", () => {
     const names = ["생성 예고", "선택받은 탄생", "고급 생산 라인", "연쇄 반응", "정리의 달인", "긴급 정리", "차원 교환", "벼랑 끝의 보상", "타일 복제", "타일 교환", "성장 촉진", "작은 수의 법칙", "쌍둥이 탄생", "기사의 여정"];
-    expect(Object.keys(cards).sort().map((id) => cards[id as keyof typeof cards].name)).toEqual(names);
+    expect(Object.keys(cards).sort().slice(0, 14).map((id) => cards[id as keyof typeof cards].name)).toEqual(names);
     expect(new Set(Object.values(legacyIds)).size).toBe(14);
   });
   it("converts owned/draft/cooldown/target and every statistics namespace without altering the run", () => {

@@ -1,7 +1,7 @@
-export type ActiveId = "A006" | "A007" | "A009" | "A010" | "A011" | "A014";
+export type ActiveId = "A006" | "A007" | "A009" | "A010" | "A011" | "A014" | "A015";
 export type Id = "A001" | "A002" | "A003" | "A012" | "A013" | "A004" | "A005" | ActiveId | "A008";
 export function isActive(id: Id): id is ActiveId {
-  return id === "A006" || id === "A007" || id === "A009" || id === "A010" || id === "A011" || id === "A014";
+  return id === "A006" || id === "A007" || id === "A009" || id === "A010" || id === "A011" || id === "A014" || id === "A015";
 }
 export const rarities = {
   common: { label: "일반" },
@@ -82,6 +82,11 @@ export const cards: Record<
     rarity: "rare",
     description: "나이트 거리(가로 2·세로 1칸 또는 가로 1·세로 2칸)의 같은 숫자 두 개를 합칩니다. 두 번째 위치에 합성되며 사용 후 40이동 충전.",
   },
+  A015: {
+    name: "한 걸음 뒤로",
+    rarity: "rare",
+    description: "직전 이동을 되돌립니다. 최대 2회 저장하며 획득 시 2회 충전됩니다. 50이동마다 1회 재충전. 다른 능력을 사용하거나 증강을 획득하면 이전 이동 기록은 초기화됩니다.",
+  },
   A008: {
     name: "벼랑 끝의 보상",
     rarity: "rare",
@@ -112,7 +117,15 @@ export type State = {
   knightSource: number | null;
   log: string[];
   stats: Record<string, number>;
+  undoCharges: number;
+  undoRecharge: number;
+  history: MoveSnapshot[];
 };
+export type MoveSnapshot = Omit<State, "history" | "undoCharges" | "undoRecharge">;
+export function canUndo(s: State) {
+  return s.owned.includes("A015") && s.undoCharges > 0 && s.history.length > 0 &&
+    !s.target && ["play", "won", "lost"].includes(s.phase);
+}
 export type Action =
   | { type: "move"; direction: Direction }
   | { type: "pick"; id: Id }
@@ -323,6 +336,9 @@ export function createGame(seed = Date.now() >>> 0): State {
     knightSource: null,
     log: ["새로운 빌드를 시작하세요."],
     stats: {},
+    undoCharges: 0,
+    undoRecharge: 0,
+    history: [],
   };
   for (let i = 0; i < 2; i++) {
     const n = sample(s, empty(s.board));
@@ -333,6 +349,17 @@ export function createGame(seed = Date.now() >>> 0): State {
 }
 export function applyAction(state: State, action: Action): State {
   const s: State = structuredClone(state);
+  if (action.type === "ability" && action.id === "A015") {
+    if (!canUndo(s)) return state;
+    const previous = s.history.pop()!;
+    const uses = s.stats.A015 || 0;
+    const restored: State = { ...previous, history: s.history,
+      undoCharges: s.undoCharges - 1, undoRecharge: s.undoRecharge || 50 };
+    restored.stats.A015 = uses;
+    fire(restored, "A015", "한 걸음 뒤로 — 직전 이동 복원");
+    finish(restored);
+    return restored;
+  }
   if (action.type === "continue") {
     if (s.phase !== "won") return state;
     s.continued = true;
@@ -353,6 +380,11 @@ export function applyAction(state: State, action: Action): State {
     s.draft.includes(action.id)
   ) {
     s.owned.push(action.id);
+    s.history = [];
+    if (action.id === "A015") {
+      s.undoCharges = 2;
+      s.undoRecharge = 0;
+    }
     s.stats[`picked:${action.id}`] = (s.stats[`picked:${action.id}`] || 0) + 1;
     s.cool[action.id] = 0;
     s.draft = [];
@@ -452,12 +484,25 @@ export function applyAction(state: State, action: Action): State {
     s.copySource = null;
     s.swapSource = null;
     s.knightSource = null;
+    s.history = [];
     finish(s);
     return s;
   }
   if (action.type !== "move" || s.target) return state;
   const m = movement(s.board, action.direction);
   if (!m.changed) return state;
+  if (s.owned.includes("A015")) {
+    const { history: _history, undoCharges: _charges, undoRecharge: _recharge, ...snapshot } = structuredClone(state);
+    s.history = [...s.history, snapshot].slice(-2);
+    if (s.undoCharges < 2) {
+      s.undoRecharge = Math.max(0, (s.undoRecharge || 50) - 1);
+      if (!s.undoRecharge) {
+        s.undoCharges++;
+        s.undoRecharge = s.undoCharges < 2 ? 50 : 0;
+        note(s, "한 걸음 뒤로 — 1회 충전 완료");
+      }
+    }
+  }
   const beforeEmpty = empty(s.board).length;
   s.board = m.board;
   s.score += m.score;

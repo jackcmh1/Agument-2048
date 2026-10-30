@@ -101,6 +101,17 @@ describe("charged undo", () => {
     expect(undo(spawned).board).toEqual(s.board);
     expect(undo(spawned).spawned).toBe(79);
   });
+  it("keeps undo available after continuing and preserves the endless-play choice", () => {
+    const s = setup(); s.board = [1024,1024,...Array(14).fill(0)];
+    const continued = applyAction(right(s), { type: "continue" });
+    expect(continued.phase).toBe("play");
+    expect(canUndo(continued)).toBe(true);
+    const undone = undo(continued);
+    expect(undone.board).toEqual(s.board);
+    expect(undone.continued).toBe(true);
+    expect(undone.undoCharges).toBe(1);
+    expect(right(undone).phase).toBe("play");
+  });
   it("does not grant charges or history to legacy saves and reports stored charges compactly", () => {
     const s = setup(); const old = { ...s } as Partial<State>;
     delete old.history; delete old.undoCharges; delete old.undoRecharge;

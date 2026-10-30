@@ -698,7 +698,7 @@ function App() {
             <p>
               점수 {s.score.toLocaleString()} · 최고 타일 {max} · {s.turn} 이동
             </p>
-            {canUndo(s) && (
+            {s.phase === "lost" && canUndo(s) && (
               <button onClick={() => dispatch({ type: "ability", id: "A015" })}>
                 한 걸음 뒤로 · {s.undoCharges}/2회
               </button>

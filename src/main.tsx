@@ -264,7 +264,7 @@ function App() {
       </header>
       {session.testMode && (
         <p className="test-mode-banner" role="status">
-          테스트 모드 · A001~A003 / 초기 생성 4회 · 2048 이후 계속 플레이 · 재시작하면 초기 설정으로 돌아갑니다.
+          테스트 모드 · A001~A003 / A002 획득 후 5회 생성부터 발동 · 2048 이후 계속 플레이 · 재시작하면 초기 설정으로 돌아갑니다.
         </p>
       )}
       <div className="layout">

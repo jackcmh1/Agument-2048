@@ -10,6 +10,13 @@ function convertId(value: string): Id {
   if (!Object.hasOwn(cards, id)) throw new Error("Unknown augment ID");
   return id as Id;
 }
+function chosenBirthBaseline(s: { chosenBirthStart?: number; spawned: number; owned: string[]; phase: string }) {
+  if (Number.isFinite(s.chosenBirthStart)) return s.chosenBirthStart!;
+  if (!s.owned.some((id) => id === "A002" || id === "G02")) return 0;
+  // Old saves did not record acquisition time. Start a fresh cycle, but do not
+  // interrupt a location choice that is already in progress.
+  return s.phase === "spawn" ? Math.max(0, s.spawned - 4) : s.spawned;
+}
 
 export function restoreSavedGame(serialized: string | null): State | null {
   try {
@@ -35,8 +42,12 @@ export function restoreSavedGame(serialized: string | null): State | null {
     }
     return {
       continued: false, copySource: null, swapSource: null, knightSource: null,
-      undoCharges: 0, undoRecharge: 0, history: [],
+      undoCharges: 0, undoRecharge: 0,
       ...s, owned, draft, target, cool, stats,
+      chosenBirthStart: chosenBirthBaseline(s),
+      history: (s.history || []).map((snapshot: State) => ({
+        ...snapshot, chosenBirthStart: chosenBirthBaseline(snapshot),
+      })),
     };
   } catch {
     return null;

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { applyAction, createGame, goals, nextValue } from "./engine";
+import { applyAction, createGame, goals, nextValue, chosenBirthRemaining } from "./engine";
 import { gameSession } from "./gameSession";
 
 describe("test game session", () => {
@@ -11,7 +11,7 @@ describe("test game session", () => {
     expect(gameSession("?latest=test").testMode).toBe(false);
     expect(gameSession("?test").storageKey).not.toBe(normal.storageKey);
   });
-  it("starts with A001–A003 ready to test the fifth spawn together", () => {
+  it("tests A002 from acquisition separately from A003's global fifth-spawn rule", () => {
     const s = gameSession("?test").newGame();
     expect(s.board.slice(0, 4)).toEqual([1024, 1024, 0, 0]);
     expect(s.board).toHaveLength(16);
@@ -21,15 +21,28 @@ describe("test game session", () => {
     expect(nextValue(s)).toBe(4);
     expect(s.reached).toEqual(goals);
     expect(s.phase).toBe("play");
-    const choice = applyAction(s, { type: "move", direction: "left" });
+    let moved = applyAction(s, { type: "move", direction: "left" });
+    expect(moved.phase).toBe("play");
+    expect(moved.spawned).toBe(5);
+    expect(moved.stats.A003).toBe(1);
+    expect(moved.stats.A002).toBeUndefined();
+    expect(moved.board).toContain(2048);
+    expect(chosenBirthRemaining(moved)).toBe(4);
+    for (let i = 0; i < 3; i++) {
+      moved.board = [2,2,...Array(14).fill(0)];
+      moved = applyAction(moved, { type: "move", direction: "left" });
+      expect(moved.phase).toBe("play");
+    }
+    moved.board = [2,2,...Array(14).fill(0)];
+    const expected = nextValue(moved);
+    const choice = applyAction(moved, { type: "move", direction: "left" });
     expect(choice.phase).toBe("spawn");
     expect(choice.choices).toHaveLength(2);
     const index = choice.choices[0];
     const placed = applyAction(choice, { type: "spawn", index });
-    expect(placed.board[index]).toBe(4);
-    expect(placed.spawned).toBe(5);
+    expect(placed.board[index]).toBe(expected);
+    expect(placed.spawned).toBe(9);
     expect(placed.stats).toMatchObject({ A002: 1, A003: 1 });
-    expect(placed.board).toContain(2048);
     expect(placed.phase).toBe("play");
   });
   it("restores a fresh identical fixture after play, victory or arbitrary mutations", () => {

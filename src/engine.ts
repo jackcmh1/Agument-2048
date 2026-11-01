@@ -23,7 +23,7 @@ export const cards: Record<
   A002: {
     name: "선택받은 탄생",
     rarity: "rare",
-    description: "매 5번째 생성은 빈칸 후보 두 곳 중 위치를 선택합니다.",
+    description: "획득 후 일반 생성 5회마다 빈칸 후보 두 곳 중 위치를 선택합니다. 생성 취소는 세지 않습니다.",
   },
   A003: {
     name: "고급 생산 라인",
@@ -105,6 +105,7 @@ export type State = {
   score: number;
   turn: number;
   spawned: number;
+  chosenBirthStart: number;
   seed: number;
   initialSeed: number;
   next: number;
@@ -159,6 +160,9 @@ function fire(s: State, id: Id, t: string) {
 }
 export function nextValue(s: State) {
   return s.owned.includes("A003") && (s.spawned + 1) % 5 === 0 ? 4 : s.owned.includes("A012") ? 2 : s.next;
+}
+export function chosenBirthRemaining(s: State) {
+  return 5 - Math.max(0, s.spawned - s.chosenBirthStart) % 5;
 }
 export function movement(board: number[], direction: Direction) {
   const out = [...board],
@@ -324,7 +328,7 @@ function spawnNext(s: State): State {
   const spaces = empty(s.board);
   if (
     s.owned.includes("A002") &&
-    (s.spawned + 1) % 5 === 0 &&
+    chosenBirthRemaining(s) === 1 &&
     spaces.length > 1
   ) {
     const a = sample(s, spaces),
@@ -348,6 +352,7 @@ export function createGame(seed = Date.now() >>> 0): State {
     score: 0,
     turn: 0,
     spawned: 0,
+    chosenBirthStart: 0,
     seed: seed >>> 0,
     initialSeed: seed >>> 0,
     next: 2,
@@ -410,6 +415,7 @@ export function applyAction(state: State, action: Action): State {
     s.draft.includes(action.id)
   ) {
     s.owned.push(action.id);
+    if (action.id === "A002") s.chosenBirthStart = s.spawned;
     s.history = [];
     if (action.id === "A015") {
       s.undoCharges = 2;

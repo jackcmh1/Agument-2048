@@ -1,4 +1,4 @@
-import { canKnightMerge, canGrow, canSwapTiles, canDuplicate, isActive, nextValue, type Id, type State } from "./engine";
+import { chosenBirthRemaining, canKnightMerge, canGrow, canSwapTiles, canDuplicate, isActive, nextValue, type Id, type State } from "./engine";
 
 export function compactAugmentStatus(s: State, id: Id) {
   if (id === "A016") return s.stats.A016 ? "소모됨" : "일회용 · 사용하기 ↗";
@@ -10,7 +10,7 @@ export function compactAugmentStatus(s: State, id: Id) {
   }
   if (id === "A001") return `다음 타일 ${nextValue(s)}`;
   if (id === "A002" || id === "A003") {
-    const remaining = 5 - s.spawned % 5;
+    const remaining = id === "A002" ? chosenBirthRemaining(s) : 5 - s.spawned % 5;
     return remaining === 1 ? "다음 생성에 발동" : `생성 ${remaining}회 남음`;
   }
   if (id === "A005") return `합성 ${3 - s.small}회 · 제거 대기 ${s.pendingClean}회`;
@@ -48,7 +48,7 @@ export function augmentStatus(s: State, id: Id) {
     };
   }
   if (id === "A002" || id === "A003") {
-    const remaining = 5 - (s.spawned % 5);
+    const remaining = id === "A002" ? chosenBirthRemaining(s) : 5 - (s.spawned % 5);
     return {
       imminent: remaining === 1,
       text: `${remaining}회 생성 후 발동${remaining === 1 ? " · 다음 생성" : ""} · ${id === "A002" ? (s.phase === "spawn" ? "지금 생성 위치 선택 중" : "빈칸 후보 2곳 이상일 때 위치 선택") : "4 생성"}`,
